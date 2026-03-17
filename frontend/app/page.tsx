@@ -1,11 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import type {
-  AnalyzeResponse,
-  ColumnMapping,
-  CounterfactualResponse,
-} from "@/types";
+import type { AnalyzeResponse, ColumnMapping, CounterfactualResponse } from "@/types";
 import { analyzeCSV, type AnalysisMode } from "@/lib/api";
 import CSVUpload from "@/components/csv-upload";
 import BiasScoreCards from "@/components/bias-scorecards";
@@ -13,19 +9,84 @@ import TradeTable from "@/components/trade-table";
 import InsightsCharts from "@/components/insights-charts";
 import CounterfactualPanel from "@/components/counterfactual-panel";
 import CoachingTab from "@/components/coaching-tab";
-import NewsTab from "@/components/news-tab";
 import ChatPanel from "@/components/chat-panel";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 
+// ── Icons ─────────────────────────────────────────────────────────────────────
+function Icon({ path, size = 18 }: { path: string; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d={path} />
+    </svg>
+  );
+}
+
+const ICONS = {
+  insights:    "M3 3v18h18M7 16l4-4 4 4 4-4",
+  timeline:    "M3 12h18M3 6h18M3 18h18",
+  whatif:      "M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5",
+  coaching:    "M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z",
+  chat:        "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z",
+  sun:         "M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z",
+  moon:        "M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z",
+  reset:       "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5",
+};
+
+type Section = "insights" | "timeline" | "whatif" | "coaching" | "chat";
+
+const NAV_ITEMS: { id: Section; label: string; iconKey: keyof typeof ICONS }[] = [
+  { id: "insights",  label: "Insights",  iconKey: "insights" },
+  { id: "timeline",  label: "Timeline",  iconKey: "timeline" },
+  { id: "whatif",    label: "What-If",   iconKey: "whatif" },
+  { id: "coaching",  label: "Coaching",  iconKey: "coaching" },
+  { id: "chat",      label: "Chat",      iconKey: "chat" },
+];
+
+// ── Theme toggle (inlined) ────────────────────────────────────────────────────
+function ThemeToggle() {
+  const [dark, setDark] = useState(true);
+  const toggle = () => {
+    const html = document.documentElement;
+    if (dark) {
+      html.classList.remove("dark");
+      html.classList.add("light");
+      localStorage.setItem("theme", "light");
+    } else {
+      html.classList.remove("light");
+      html.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    }
+    setDark(!dark);
+  };
+  return (
+    <button onClick={toggle} style={{ color: "var(--muted-foreground)", background: "none",
+      border: "1px solid var(--border)", borderRadius: 6, padding: "5px 8px", cursor: "pointer",
+      display: "flex", alignItems: "center" }}>
+      <Icon path={dark ? ICONS.sun : ICONS.moon} size={15} />
+    </button>
+  );
+}
+
+// ── Stat card ─────────────────────────────────────────────────────────────────
+function StatCard({ label, value, color }: { label: string; value: string; color?: string }) {
+  return (
+    <div style={{ background: "var(--card)", border: "1px solid var(--border)",
+      borderRadius: 8, padding: "10px 14px" }}>
+      <p style={{ fontSize: 11, color: "var(--muted-foreground)", marginBottom: 3 }}>{label}</p>
+      <p style={{ fontSize: 18, fontWeight: 700, color: color || "var(--foreground)" }}>{value}</p>
+    </div>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
 export default function Home() {
   const [data, setData] = useState<AnalyzeResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [counterfactual, setCounterfactual] =
-    useState<CounterfactualResponse | null>(null);
+  const [counterfactual, setCounterfactual] = useState<CounterfactualResponse | null>(null);
   const [analysisMode, setAnalysisMode] = useState<AnalysisMode>("mixed");
+  const [activeSection, setActiveSection] = useState<Section>("insights");
 
   const handleUpload = async (file: File, mapping?: ColumnMapping) => {
     setLoading(true);
@@ -36,8 +97,7 @@ export default function Home() {
         const errData = await res.json().catch(() => ({ detail: res.statusText }));
         throw new Error(errData.detail || "Analysis failed");
       }
-      const result: AnalyzeResponse = await res.json();
-      setData(result);
+      setData(await res.json());
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -50,312 +110,195 @@ export default function Home() {
     const trades = data.normalized_trades;
     const totalPnl = trades.reduce((s, t) => s + Number(t.pnl ?? 0), 0);
     const wins = trades.filter((t) => Number(t.pnl ?? 0) > 0).length;
-    const losses = trades.filter((t) => Number(t.pnl ?? 0) < 0).length;
     const winRate = trades.length > 0 ? wins / trades.length : 0;
     const avgPnl = trades.length > 0 ? totalPnl / trades.length : 0;
     const maxWin = Math.max(...trades.map((t) => Number(t.pnl ?? 0)));
     const maxLoss = Math.min(...trades.map((t) => Number(t.pnl ?? 0)));
-    const bestTrade = trades.reduce((best, t) => {
-      if (!best) return t;
-      return Number(t.pnl ?? 0) > Number(best.pnl ?? 0) ? t : best;
-    }, null as any);
-    const worstTrade = trades.reduce((worst, t) => {
-      if (!worst) return t;
-      return Number(t.pnl ?? 0) < Number(worst.pnl ?? 0) ? t : worst;
-    }, null as any);
-    return { totalPnl, wins, losses, winRate, avgPnl, maxWin, maxLoss, bestTrade, worstTrade };
+    return { totalPnl, wins, winRate, avgPnl, maxWin, maxLoss };
   }, [data]);
 
-  const formatDateTime = (value?: string) => {
-    if (!value) return "";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "";
-    return new Intl.DateTimeFormat(undefined, {
-      dateStyle: "medium",
-      timeStyle: "short",
-    }).format(date);
-  };
-
-  if (loading && !data) {
-    return (
-      <div className="space-y-5 animate-in">
-        {/* Loading skeleton */}
-        <div className="flex items-center justify-center gap-3 py-4">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center animate-pulse">
-            <span className="text-white font-bold">B</span>
-          </div>
-          <div>
-            <p className="text-lg font-bold">Analyzing your trades…</p>
-            <p className="text-xs text-muted-foreground">Running bias detection, ML predictions & generating insights</p>
-          </div>
-        </div>
-        {/* Stat cards skeleton */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-          {Array.from({ length: 7 }).map((_, i) => (
-            <div key={i} className={`rounded-xl border border-border/50 bg-card p-3 shadow-sm animate-slide-up stagger-${i + 1}`}>
-              <div className="skeleton h-3 w-16 mb-2" />
-              <div className="skeleton h-6 w-20" />
-            </div>
-          ))}
-        </div>
-        {/* Bias cards skeleton */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className={`rounded-xl border border-border/50 bg-card p-4 shadow-sm animate-slide-up stagger-${i + 3}`}>
-              <div className="skeleton h-10 w-10 rounded-full mb-3" />
-              <div className="skeleton h-4 w-24 mb-2" />
-              <div className="skeleton h-8 w-16 mb-2" />
-              <div className="skeleton h-2 w-full rounded-full" />
-            </div>
-          ))}
-        </div>
-        {/* Tab area skeleton */}
-        <div className="rounded-xl border border-border/50 bg-card p-6 shadow-sm animate-slide-up stagger-7">
-          <div className="flex gap-2 mb-6">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="skeleton h-9 w-20 rounded-lg" />
-            ))}
-          </div>
-          <div className="space-y-3">
-            <div className="skeleton h-4 w-3/4" />
-            <div className="skeleton h-4 w-1/2" />
-            <div className="skeleton h-48 w-full rounded-xl" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  // ── Upload / loading screen ─────────────────────────────────────────────────
   if (!data) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-        <div className="w-full max-w-xl space-y-8 animate-in">
-          <div className="text-center space-y-3">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center mx-auto mb-4">
-              <span className="text-white text-2xl font-bold">B</span>
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center",
+        justifyContent: "center", background: "var(--background)" }}>
+        <div style={{ width: "100%", maxWidth: 480, padding: "0 24px" }}>
+          {/* Logo */}
+          <div style={{ textAlign: "center", marginBottom: 36 }}>
+            <div style={{ width: 52, height: 52, borderRadius: 12,
+              background: "var(--primary)", display: "flex", alignItems: "center",
+              justifyContent: "center", margin: "0 auto 16px" }}>
+              <span style={{ color: "#fff", fontSize: 22, fontWeight: 700 }}>T</span>
             </div>
-            <h1 className="text-4xl font-bold tracking-tight">
-              Bias<span className="text-gradient">Lens</span>
-            </h1>
-            <p className="text-muted-foreground text-base max-w-md mx-auto">
-              Upload your trade log to detect behavioral biases, simulate
-              corrections, and get AI-powered coaching.
+            <h1 style={{ fontSize: 28, fontWeight: 700, margin: "0 0 8px",
+              color: "var(--foreground)" }}>Tradealytics</h1>
+            <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: 0 }}>
+              Upload your trade log to detect behavioral biases and get AI coaching.
             </p>
           </div>
-          {/* Analysis Mode Selector */}
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground text-center uppercase tracking-wider">Analysis Method</p>
-            <div className="flex rounded-xl bg-muted/50 p-1 gap-1">
-              {([
-                { value: "rules_only", label: "📏 Rules Only", desc: "Hand-tuned detectors" },
-                { value: "mixed", label: "⚖️ Mixed", desc: "60% Rules + 40% ML" },
-                { value: "ml_only", label: "🤖 ML Only", desc: "XGBoost model" },
-              ] as const).map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => setAnalysisMode(opt.value)}
-                  className={`flex-1 rounded-lg px-3 py-2 text-center transition-all ${
-                    analysisMode === opt.value
-                      ? "bg-background shadow-sm ring-1 ring-border/50"
-                      : "hover:bg-background/50"
-                  }`}
-                >
-                  <span className={`text-sm font-semibold block ${analysisMode === opt.value ? "text-foreground" : "text-muted-foreground"}`}>{opt.label}</span>
-                  <span className="text-[10px] text-muted-foreground">{opt.desc}</span>
+
+          {/* Analysis mode */}
+          <div style={{ marginBottom: 20 }}>
+            <p style={{ fontSize: 11, color: "var(--muted-foreground)", marginBottom: 8,
+              textTransform: "uppercase", letterSpacing: "0.06em" }}>Analysis Method</p>
+            <div style={{ display: "flex", gap: 6, background: "var(--muted)",
+              borderRadius: 8, padding: 4 }}>
+              {(["rules_only", "mixed", "ml_only"] as const).map((m) => (
+                <button key={m} onClick={() => setAnalysisMode(m)}
+                  style={{ flex: 1, padding: "7px 4px", borderRadius: 6, border: "none",
+                    cursor: "pointer", fontSize: 12, fontWeight: 500,
+                    background: analysisMode === m ? "var(--card)" : "transparent",
+                    color: analysisMode === m ? "var(--foreground)" : "var(--muted-foreground)",
+                    transition: "all 0.15s" }}>
+                  {m === "rules_only" ? "Rules Only" : m === "mixed" ? "Mixed" : "ML Only"}
                 </button>
               ))}
             </div>
           </div>
-          <CSVUpload onUpload={handleUpload} isLoading={loading} />
-          {error && (
-            <Card className="border-destructive/50 bg-destructive/5">
-              <CardContent className="py-3 text-sm text-destructive">
-                {error}
-              </CardContent>
-            </Card>
+
+          {loading ? (
+            <div style={{ textAlign: "center", padding: "40px 0" }}>
+              <p style={{ color: "var(--muted-foreground)", fontSize: 13 }}>
+                Analyzing your trades…
+              </p>
+              <div style={{ marginTop: 12, height: 4, borderRadius: 2,
+                background: "var(--muted)", overflow: "hidden" }}>
+                <div className="skeleton" style={{ height: "100%" }} />
+              </div>
+            </div>
+          ) : (
+            <CSVUpload onUpload={handleUpload} isLoading={loading} />
           )}
+
+          {error && (
+            <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: 6,
+              background: "var(--danger-muted)", border: "1px solid var(--danger)",
+              color: "var(--danger)", fontSize: 13 }}>
+              {error}
+            </div>
+          )}
+
+          <div style={{ marginTop: 24, textAlign: "center" }}>
+            <ThemeToggle />
+          </div>
         </div>
       </div>
     );
   }
 
-  const handleReset = () => {
-    setData(null);
-    setCounterfactual(null);
-    setError(null);
-    setAnalysisMode("mixed");
-  };
-
+  // ── Main dashboard ──────────────────────────────────────────────────────────
   return (
-    <div className="space-y-5 animate-in">
-      {/* Header with reset */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center">
-            <span className="text-white text-sm font-bold">B</span>
-          </div>
-          <h1 className="text-xl font-bold tracking-tight">
-            Bias<span className="text-gradient">Lens</span>
-          </h1>
+    <div style={{ display: "flex", height: "100vh", overflow: "hidden",
+      background: "var(--background)" }}>
+
+      {/* Sidebar */}
+      <aside style={{ width: 56, flexShrink: 0, background: "var(--sidebar-bg)",
+        borderRight: "1px solid var(--sidebar-border)", display: "flex",
+        flexDirection: "column", alignItems: "center", paddingTop: 16, gap: 4 }}>
+
+        {/* Logo */}
+        <div style={{ width: 32, height: 32, borderRadius: 8, background: "var(--primary)",
+          display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+          <span style={{ color: "#fff", fontSize: 14, fontWeight: 700 }}>T</span>
         </div>
-        <button
-          onClick={handleReset}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-muted/50 hover:bg-muted border border-border/50 transition-all hover:shadow-sm active:scale-[0.98]"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-          New Analysis
+
+        {/* Nav items */}
+        {NAV_ITEMS.map((item) => {
+          const active = activeSection === item.id;
+          return (
+            <button key={item.id} onClick={() => setActiveSection(item.id)}
+              title={item.label}
+              style={{ width: 40, height: 40, borderRadius: 8, border: "none",
+                cursor: "pointer", display: "flex", alignItems: "center",
+                justifyContent: "center", transition: "all 0.15s",
+                background: active ? "var(--primary)" : "transparent",
+                color: active ? "#fff" : "var(--muted-foreground)" }}>
+              <Icon path={ICONS[item.iconKey]} size={17} />
+            </button>
+          );
+        })}
+
+        {/* Spacer */}
+        <div style={{ flex: 1 }} />
+
+        {/* Bottom controls */}
+        <button onClick={() => { setData(null); setCounterfactual(null); }}
+          title="New Analysis"
+          style={{ width: 40, height: 40, borderRadius: 8, border: "none",
+            cursor: "pointer", display: "flex", alignItems: "center",
+            justifyContent: "center", background: "transparent",
+            color: "var(--muted-foreground)", marginBottom: 4 }}>
+          <Icon path={ICONS.reset} size={16} />
         </button>
+        <div style={{ marginBottom: 12 }}>
+          <ThemeToggle />
+        </div>
+      </aside>
+
+      {/* Main content */}
+      <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column" }}>
+
+        {/* Top bar */}
+        <header style={{ height: 48, flexShrink: 0, borderBottom: "1px solid var(--border)",
+          display: "flex", alignItems: "center", padding: "0 20px", gap: 12,
+          background: "var(--card)" }}>
+          <span style={{ fontWeight: 600, fontSize: 14, color: "var(--foreground)" }}>
+            {NAV_ITEMS.find((n) => n.id === activeSection)?.label}
+          </span>
+          <span style={{ fontSize: 11, color: "var(--muted-foreground)",
+            background: "var(--muted)", padding: "2px 8px", borderRadius: 4 }}>
+            {data.normalized_trades.length} trades
+            {data.feature_stats?.ml_active ? " · ML active" : ""}
+          </span>
+        </header>
+
+        {/* Stats strip */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)",
+          gap: 10, padding: "14px 20px 0", flexShrink: 0 }}>
+          <StatCard label="Total PnL"
+            value={formatCurrency(stats!.totalPnl)}
+            color={stats!.totalPnl >= 0 ? "var(--success)" : "var(--danger)"} />
+          <StatCard label="Win Rate"
+            value={`${(stats!.winRate * 100).toFixed(1)}%`}
+            color={stats!.winRate >= 0.5 ? "var(--success)" : "var(--muted-foreground)"} />
+          <StatCard label="Avg PnL"
+            value={formatCurrency(stats!.avgPnl)}
+            color={stats!.avgPnl >= 0 ? "var(--success)" : "var(--danger)"} />
+          <StatCard label="Best Trade" value={formatCurrency(stats!.maxWin)}
+            color="var(--success)" />
+          <StatCard label="Worst Trade" value={formatCurrency(stats!.maxLoss)}
+            color="var(--danger)" />
+          <StatCard label="Flagged"
+            value={String(data.flagged_trades.length)}
+            color={data.flagged_trades.length > 0 ? "var(--primary)" : "var(--success)"} />
+        </div>
+
+        {/* Bias score cards — always visible */}
+        <div style={{ padding: "14px 20px 0", flexShrink: 0 }}>
+          <BiasScoreCards scores={data.bias_scores} trades={data.normalized_trades} />
+        </div>
+
+        {/* Active section */}
+        <div style={{ flex: 1, padding: "14px 20px 20px", overflow: "auto" }}
+          className="animate-fade-in">
+          {activeSection === "insights" && (
+            <InsightsCharts trades={data.normalized_trades}
+              featureStats={data.feature_stats} biasEvidence={data.bias_evidence} />
+          )}
+          {activeSection === "timeline" && (
+            <TradeTable trades={data.normalized_trades} flaggedTrades={data.flagged_trades} />
+          )}
+          {activeSection === "whatif" && (
+            <CounterfactualPanel trades={data.normalized_trades} onResult={setCounterfactual} />
+          )}
+          {activeSection === "coaching" && (
+            <CoachingTab analysisData={data} counterfactual={counterfactual} />
+          )}
+          {activeSection === "chat" && (
+            <ChatPanel analysisData={data} />
+          )}
+        </div>
       </div>
-
-      {/* Summary stats strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-        <StatCard
-          label="Total Trades"
-          value={String(data.normalized_trades.length)}
-        />
-        <StatCard
-          label="Total PnL"
-          value={formatCurrency(stats!.totalPnl)}
-          color={stats!.totalPnl >= 0 ? "text-emerald-600" : "text-red-500"}
-        />
-        <StatCard
-          label="Win Rate"
-          value={`${(stats!.winRate * 100).toFixed(1)}%`}
-          color={stats!.winRate >= 0.5 ? "text-emerald-600" : "text-amber-500"}
-        />
-        <StatCard
-          label="Avg PnL"
-          value={formatCurrency(stats!.avgPnl)}
-          color={stats!.avgPnl >= 0 ? "text-emerald-600" : "text-red-500"}
-        />
-        <StatCard
-          label="Best Trade"
-          value={formatCurrency(stats!.maxWin)}
-          color="text-emerald-600"
-          detail={formatDateTime(stats!.bestTrade?.timestamp)}
-        />
-        <StatCard
-          label="Worst Trade"
-          value={formatCurrency(stats!.maxLoss)}
-          color="text-red-500"
-          detail={formatDateTime(stats!.worstTrade?.timestamp)}
-        />
-        <StatCard
-          label="Flagged"
-          value={`${data.flagged_trades.length}`}
-          color={data.flagged_trades.length > 0 ? "text-amber-500" : "text-emerald-600"}
-        />
-      </div>
-
-      {/* Analysis Mode Badge */}
-      {(() => {
-        const mode = data.feature_stats?.analysis_mode || "mixed";
-        const mlActive = data.feature_stats?.ml_active;
-        const configs: Record<string, { label: string; desc: string; color: string; border: string; dot: string; ping: string }> = {
-          rules_only: { label: "📏 Rules Only", desc: "Scores from hand-tuned rule-based detectors", color: "text-blue-700", border: "bg-blue-50 border-blue-200/50", dot: "bg-blue-500", ping: "bg-blue-400" },
-          ml_only: { label: "🤖 ML Only", desc: "Scores from XGBoost model predictions", color: "text-violet-700", border: "bg-violet-50 border-violet-200/50", dot: "bg-violet-500", ping: "bg-violet-400" },
-          mixed: { label: "⚖️ Mixed", desc: "Scores blend 60% rule-based + 40% ML predictions", color: "text-emerald-700", border: "bg-emerald-50 border-emerald-200/50", dot: "bg-emerald-500", ping: "bg-emerald-400" },
-        };
-        const c = configs[mode] || configs.mixed;
-        return (
-          <div className="flex items-center gap-2 px-1">
-            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border ${c.border}`}>
-              <span className="relative flex h-2 w-2">
-                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${c.ping} opacity-75`}></span>
-                <span className={`relative inline-flex rounded-full h-2 w-2 ${c.dot}`}></span>
-              </span>
-              <span className={`text-[11px] font-semibold ${c.color}`}>{c.label}{mlActive ? " + ML Active" : ""}</span>
-            </div>
-            <span className="text-[10px] text-muted-foreground">{c.desc}</span>
-          </div>
-        );
-      })()}
-      <BiasScoreCards scores={data.bias_scores} trades={data.normalized_trades} />
-
-      {/* Tabbed views */}
-      <Tabs defaultValue="insights" className="w-full">
-        <TabsList className="w-full justify-start gap-1 bg-muted/50 p-1 rounded-xl h-auto flex-wrap">
-          <TabsTrigger value="insights" className="rounded-lg text-xs sm:text-sm px-4 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-            📊 Insights
-          </TabsTrigger>
-          <TabsTrigger value="timeline" className="rounded-lg text-xs sm:text-sm px-4 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-            📋 Timeline
-          </TabsTrigger>
-          <TabsTrigger value="counterfactual" className="rounded-lg text-xs sm:text-sm px-4 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-            🔮 What-If
-          </TabsTrigger>
-          <TabsTrigger value="coaching" className="rounded-lg text-xs sm:text-sm px-4 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-            🧠 Coaching
-          </TabsTrigger>
-          <TabsTrigger value="news" className="rounded-lg text-xs sm:text-sm px-4 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-            📰 News
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="insights" className="mt-4 animate-slide-up">
-          <InsightsCharts
-            trades={data.normalized_trades}
-            featureStats={data.feature_stats}
-            biasEvidence={data.bias_evidence}
-          />
-        </TabsContent>
-
-        <TabsContent value="timeline" className="mt-4 animate-slide-up">
-          <TradeTable
-            trades={data.normalized_trades}
-            flaggedTrades={data.flagged_trades}
-          />
-        </TabsContent>
-
-        <TabsContent value="counterfactual" className="mt-4 animate-slide-up">
-          <CounterfactualPanel
-            trades={data.normalized_trades}
-            onResult={setCounterfactual}
-          />
-        </TabsContent>
-
-        <TabsContent value="coaching" className="mt-4 animate-slide-up">
-          <CoachingTab
-            analysisData={data}
-            counterfactual={counterfactual}
-          />
-        </TabsContent>
-
-        <TabsContent value="news" className="mt-4 animate-slide-up">
-          <NewsTab analysisData={data} />
-        </TabsContent>
-      </Tabs>
-
-      {/* Floating AI Chat */}
-      <ChatPanel analysisData={data} />
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  color,
-  detail,
-}: {
-  label: string;
-  value: string;
-  color?: string;
-  detail?: string;
-}) {
-  return (
-    <div className="rounded-xl border border-border/50 bg-card p-3 shadow-sm">
-      <p className="text-[11px] font-medium text-muted-foreground truncate">
-        {label}
-      </p>
-      <p className={`text-lg font-bold tracking-tight mt-0.5 ${color || ""}`}>
-        {value}
-      </p>
-      {detail ? (
-        <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
-          {detail}
-        </p>
-      ) : null}
     </div>
   );
 }

@@ -1,10 +1,10 @@
-# 🔍 BiasLens
+# 🔍 Tradealytics
 
 **AI-powered trading behavior analysis.** Detect cognitive biases in your trading history, visualize behavioral patterns, simulate healthier behavior, and get personalized coaching — powered by XGBoost ML and Google Gemini.
 
 > **QHacks 2026 — National Bank Bias Detector Challenge**
 
-![BiasLens](https://img.shields.io/badge/BiasLens-v1.0-blue?style=flat-square)
+![Tradealytics](https://img.shields.io/badge/Tradealytics-v1.0-blue?style=flat-square)
 ![Python](https://img.shields.io/badge/Python-3.11+-green?style=flat-square)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black?style=flat-square)
 ![XGBoost](https://img.shields.io/badge/XGBoost-ML-orange?style=flat-square)
@@ -74,7 +74,7 @@
 ### 1. Clone & configure
 
 ```bash
-git clone <repo-url> && cd biaslens
+git clone <repo-url> && cd tradealytics
 ```
 
 Create a `.env` file in the project root:

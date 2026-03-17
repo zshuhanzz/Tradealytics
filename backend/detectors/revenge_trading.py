@@ -1,7 +1,12 @@
 from __future__ import annotations
 
-import numpy as np
 import pandas as pd
+
+try:
+    import tradealytics_core
+    _USE_CPP = True
+except ImportError:
+    _USE_CPP = False
 
 
 def detect_revenge_trading(
@@ -15,93 +20,39 @@ def detect_revenge_trading(
             "score": 0.0,
             "flags": [],
             "evidence": [],
-            "stats": {
-                "revenge_events": 0,
-                "event_rate": 0.0,
-                "streak_events": 0,
-            },
+            "stats": {"revenge_events": 0, "event_rate": 0.0, "streak_events": 0},
         }
 
-    sorted_df = df.sort_values("timestamp").reset_index()
-    flagged_original_indices: set[int] = set()
-    events = 0
+    result = tradealytics_core.detect_revenge_trading(
+        df["timestamp"].astype("int64").tolist(),
+        df["pnl"].tolist(),
+        df["quantity"].tolist(),
+        reentry_window_minutes,
+        size_multiplier_threshold,
+        streak_threshold,
+    )
 
-    # ── Single-loss rapid re-entry ──
-    for idx, row in sorted_df.iterrows():
-        if row["pnl"] >= 0:
-            continue
-
-        future = sorted_df.iloc[idx + 1 : idx + 6]
-        if future.empty:
-            continue
-
-        time_boundary = row["timestamp"] + pd.Timedelta(minutes=reentry_window_minutes)
-        candidates = future[future["timestamp"] <= time_boundary]
-
-        if candidates.empty:
-            continue
-
-        bigger_size = candidates[candidates["quantity"] >= row["quantity"] * size_multiplier_threshold]
-        if bigger_size.empty:
-            continue
-
-        first_reentry = bigger_size.iloc[0]
-        flagged_original_indices.add(int(first_reentry["index"]))
-        events += 1
-
-    # ── Streak-based detection ──
-    # After N consecutive losses, if the trader increases size → revenge
-    streak_events = 0
-    loss_streak = 0
-    for idx, row in sorted_df.iterrows():
-        if row["pnl"] < 0:
-            loss_streak += 1
-        else:
-            # This trade broke the streak. Check if size increased after streak.
-            if loss_streak >= streak_threshold:
-                # Compare this trade's size to average of the streak trades
-                streak_start = max(0, idx - loss_streak)
-                streak_trades = sorted_df.iloc[streak_start:idx]
-                avg_streak_qty = float(streak_trades["quantity"].mean()) if not streak_trades.empty else 0.0
-                if avg_streak_qty > 0 and row["quantity"] >= avg_streak_qty * 1.1:
-                    streak_events += 1
-                    flagged_original_indices.add(int(row["index"]))
-            loss_streak = 0
-
-    total_events = events + streak_events
-    event_rate = total_events / max(len(df), 1)
-    score = float(np.clip(event_rate * 350, 0, 100))
+    s = result.stats
+    stats = {
+        "revenge_events": int(s["revenge_events"]),
+        "event_rate": round(s["event_rate"], 3),
+        "streak_events": int(s["streak_events"]),
+    }
 
     evidence = [
-        {
-            "metric": "revenge_events",
-            "value": events,
-            "note": "Rapid larger re-entries after a single loss.",
-        },
-        {
-            "metric": "streak_events",
-            "value": streak_events,
-            "note": f"Increased size after {streak_threshold}+ consecutive losses.",
-        },
-        {
-            "metric": "event_rate",
-            "value": round(event_rate, 3),
-            "note": "Total revenge events per trade in sample.",
-        },
-        {
-            "metric": "reentry_window_minutes",
-            "value": reentry_window_minutes,
-            "note": "Configured time window for re-entry detection.",
-        },
+        {"metric": "revenge_events", "value": stats["revenge_events"],
+         "note": "Rapid larger re-entries after a single loss."},
+        {"metric": "streak_events", "value": stats["streak_events"],
+         "note": f"Increased size after {streak_threshold}+ consecutive losses."},
+        {"metric": "event_rate", "value": stats["event_rate"],
+         "note": "Total revenge events per trade in sample."},
+        {"metric": "reentry_window_minutes", "value": reentry_window_minutes,
+         "note": "Configured time window for re-entry detection."},
     ]
 
     return {
-        "score": score,
-        "flags": sorted(flagged_original_indices),
+        "score": result.score,
+        "flags": result.flag_indices,
         "evidence": evidence,
-        "stats": {
-            "revenge_events": events,
-            "event_rate": round(event_rate, 3),
-            "streak_events": streak_events,
-        },
+        "stats": stats,
     }

@@ -1,4 +1,4 @@
-// ─── BiasLens frontend types (aligned with backend schemas) ───
+// ─── Tradealytics frontend types (aligned with backend schemas) ───
 
 export interface Trade {
   timestamp: string;
@@ -71,20 +71,6 @@ export interface CoachingResponse {
   coaching_plan: string[];
 }
 
-export interface NewsItem {
-  title: string;
-  source: string;
-  published_at: string;
-  url: string;
-  symbol?: string | null;
-}
-
-export interface NewsResponse {
-  date: string;
-  headlines: NewsItem[];
-  context?: string | null;
-  symbols?: string[];
-}
 
 export interface TradeInsight {
   trade_index: number;

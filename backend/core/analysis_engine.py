@@ -7,7 +7,6 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from backend.detectors.common import score_to_severity
 from backend.detectors.loss_aversion import detect_loss_aversion
 from backend.detectors.overtrading import detect_overtrading
 from backend.detectors.revenge_trading import detect_revenge_trading
@@ -17,6 +16,14 @@ from backend.ml.model import BiasMLClassifier
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+def score_to_severity(score: float) -> str:
+    if score >= 70:
+        return "high"
+    if score >= 40:
+        return "medium"
+    return "low"
 
 BIAS_TYPES = ["overtrading", "loss_aversion", "revenge_trading"]
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
@@ -106,17 +106,8 @@ class CounterfactualResponse(BaseModel):
     modified_trade_list: list[CounterfactualTrade]
 
 
-class BiasEvent(BaseModel):
-    bias_type: str
-    date: date
-    trader_behavior: str
-    headlines: list[str] = Field(default_factory=list)
-
-
 class ReportRequest(BaseModel):
     analysis: dict[str, Any]
-    bias_event: BiasEvent | None = None
-    include_headlines: bool = True
 
 
 class ReportResponse(BaseModel):
@@ -124,22 +115,8 @@ class ReportResponse(BaseModel):
     coaching_plan: list[str]
 
 
-class NewsItem(BaseModel):
-    title: str
-    source: str
-    published_at: datetime
-    url: str
-    symbol: str | None = None
 
-
-class NewsResponse(BaseModel):
-    date: date
-    headlines: list[NewsItem]
-    context: str | None = None
-    symbols: list[str] = Field(default_factory=list)
-
-
-# ── Trade Insights (per-flagged-trade Gemini analysis with news) ──
+# ── Trade Insights ──
 
 
 class TradeInsight(BaseModel):

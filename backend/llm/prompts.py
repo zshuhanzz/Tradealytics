@@ -23,31 +23,6 @@ Provide a concise markdown coaching report with these sections:
 Keep the entire report under 400 words. Be specific, not generic.
 """
 
-TICKER_NEWS_PROMPT = """
-Search for recent financial news about the following ticker symbols: {symbols}
-
-Focus on the date range: {date_range}
-
-For each symbol, find the most relevant and impactful news articles, earnings reports, price movements, analyst ratings, or market events.
-
-Also search for general market news during this period (Fed decisions, economic data, sector trends, major indices movements).
-
-IMPORTANT: Return your response in exactly this format:
-
-## HEADLINES
-- [SYMBOL] Headline text here | Source Name
-- [SYMBOL] Another headline | Source Name
-- [MARKET] General market headline | Source Name
-
-## CONTEXT
-A comprehensive market context summary (4-6 sentences) covering:
-1. Major market-moving events during this period for each symbol
-2. How these events relate to the traded symbols
-3. Broader market sentiment, volatility, and macro conditions
-4. Any catalysts that could trigger emotional or impulsive trading behavior
-
-Be factual and cite the sources you find.
-"""
 
 TRADE_INSIGHTS_PROMPT = """
 Analyze these flagged trades for behavioral biases. Be concise — 2 sentences max per field.
@@ -76,7 +51,7 @@ For EACH flagged trade, return JSON:
 Be specific. Reference actual symbols, PnL, and real market events. If no specific catalyst is found, focus on the behavioral pattern.
 """
 
-CHAT_SYSTEM_PROMPT = """You are BiasLens AI, an expert trading behavior coach embedded in a bias detection dashboard. The user has uploaded their trade log and received an analysis. You have access to their full analysis results below.
+CHAT_SYSTEM_PROMPT = """You are Tradealytics AI, an expert trading behavior coach embedded in a bias detection dashboard. The user has uploaded their trade log and received an analysis. You have access to their full analysis results below.
 
 ## Analysis Context
 {analysis_context}

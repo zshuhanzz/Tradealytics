@@ -9,8 +9,6 @@ import type {
   TradeInsight,
 } from "@/types";
 import { fetchReport, fetchTradeInsights } from "@/lib/api";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ReactMarkdown from "react-markdown";
 import { formatCurrency } from "@/lib/utils";
 
@@ -19,107 +17,95 @@ interface Props {
   counterfactual: CounterfactualResponse | null;
 }
 
-function TradeAccordion({
-  insight,
-  biasTagColor,
-}: {
-  insight: TradeInsight;
-  biasTagColor: Record<string, string>;
-}) {
+const BIAS_TAG_STYLE: Record<string, React.CSSProperties> = {
+  overtrading:     { background: "rgba(249, 115, 22, 0.15)", color: "#F97316" },
+  loss_aversion:   { background: "rgba(192, 57, 43, 0.15)",  color: "var(--danger)" },
+  revenge_trading: { background: "rgba(147, 51, 234, 0.15)", color: "#9333EA" },
+};
+
+function TradeAccordion({ insight }: { insight: TradeInsight }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="rounded-xl border border-border/50 overflow-hidden transition-all hover:border-border">
-      {/* Clickable header */}
+    <div style={{ border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden" }}>
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-muted/30 transition-colors"
-      >
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          <span
-            className={`flex-shrink-0 w-5 h-5 rounded-md text-[10px] font-bold flex items-center justify-center transition-transform ${
-              open ? "rotate-90" : ""
-            } bg-muted text-muted-foreground`}
-          >
-            ▶
-          </span>
-          <span className="text-xs font-mono font-semibold bg-violet-100 text-violet-700 px-2 py-0.5 rounded-md flex-shrink-0">
+        style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+          gap: 10, padding: "10px 14px", background: "none", border: "none", cursor: "pointer",
+          textAlign: "left" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: 1 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: "var(--muted-foreground)",
+            transform: open ? "rotate(90deg)" : "none", transition: "transform 0.15s",
+            display: "inline-block", flexShrink: 0 }}>▶</span>
+          <span style={{ fontSize: 11, fontFamily: "monospace", fontWeight: 600,
+            background: "rgba(147, 51, 234, 0.15)", color: "#9333EA",
+            padding: "2px 6px", borderRadius: 4, flexShrink: 0 }}>
             {insight.symbol}
           </span>
-          <span
-            className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded flex-shrink-0 ${
-              insight.side === "buy"
-                ? "bg-emerald-100 text-emerald-700"
-                : "bg-red-100 text-red-700"
-            }`}
-          >
+          <span style={{
+            fontSize: 10, fontWeight: 700, padding: "2px 5px", borderRadius: 4,
+            textTransform: "uppercase", flexShrink: 0,
+            background: insight.side === "buy" ? "rgba(58, 168, 90, 0.15)" : "rgba(192, 57, 43, 0.15)",
+            color: insight.side === "buy" ? "var(--success)" : "var(--danger)",
+          }}>
             {insight.side}
           </span>
-          <span className="text-[11px] text-muted-foreground flex-shrink-0">
+          <span style={{ fontSize: 11, color: "var(--muted-foreground)", flexShrink: 0 }}>
             #{insight.trade_index}
           </span>
-          {/* Bias tags inline */}
-          <div className="flex gap-1 flex-shrink-0">
-            {insight.tags.map((tag) => (
-              <span
-                key={tag}
-                className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full ${
-                  biasTagColor[tag] || "bg-gray-100 text-gray-600"
-                }`}
-              >
-                {tag.replace("_", " ")}
+          <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+            {insight.tags.map(tag => (
+              <span key={tag} style={{
+                fontSize: 10, padding: "1px 6px", borderRadius: 10, fontWeight: 500,
+                ...(BIAS_TAG_STYLE[tag] || { background: "var(--muted)", color: "var(--muted-foreground)" }),
+              }}>
+                {tag.replace(/_/g, " ")}
               </span>
             ))}
           </div>
         </div>
-        <span
-          className={`text-sm font-mono font-semibold flex-shrink-0 ${
-            insight.pnl >= 0 ? "text-emerald-600" : "text-red-500"
-          }`}
-        >
+        <span style={{ fontSize: 12, fontFamily: "monospace", fontWeight: 600, flexShrink: 0,
+          color: insight.pnl >= 0 ? "var(--success)" : "var(--danger)" }}>
           {formatCurrency(insight.pnl)}
         </span>
       </button>
 
-      {/* Expandable body */}
       {open && (
-        <div className="px-4 pb-4 pt-1 space-y-3 border-t border-border/30 animate-slide-up">
-          {/* Flag reason */}
-          <div className="p-2.5 rounded-lg bg-amber-50/50 border border-amber-100/50">
-            <p className="text-[11px] font-medium text-amber-700 mb-0.5">
-              ⚠️ Flag Reason
+        <div style={{ padding: "10px 14px 14px", borderTop: "1px solid var(--border)", display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ padding: "8px 12px", borderRadius: 6,
+            background: "rgba(163, 68, 93, 0.08)", border: "1px solid rgba(163, 68, 93, 0.2)" }}>
+            <p style={{ fontSize: 11, fontWeight: 600, color: "var(--primary)", margin: "0 0 4px" }}>
+              Flag Reason
             </p>
-            <p className="text-xs text-muted-foreground">{insight.reason}</p>
+            <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: 0 }}>{insight.reason}</p>
           </div>
 
-          {/* AI Explanation */}
           {insight.gemini_explanation && (
-            <div className="p-2.5 rounded-lg bg-blue-50/50 border border-blue-100/50">
-              <p className="text-[11px] font-medium text-blue-700 mb-0.5">
-                🤖 AI Analysis
+            <div style={{ padding: "8px 12px", borderRadius: 6,
+              background: "rgba(163, 68, 93, 0.05)", border: "1px solid var(--border)" }}>
+              <p style={{ fontSize: 11, fontWeight: 600, color: "var(--foreground)", margin: "0 0 4px" }}>
+                AI Analysis
               </p>
-              <p className="text-xs text-muted-foreground leading-relaxed">
+              <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: 0, lineHeight: 1.5 }}>
                 {insight.gemini_explanation}
               </p>
             </div>
           )}
 
-          {/* Market Context */}
           {insight.market_context && (
-            <div className="p-2.5 rounded-lg bg-gray-50/50 border border-gray-100/50">
-              <p className="text-[11px] font-medium text-gray-600 mb-0.5">
-                📊 Market Context
+            <div style={{ padding: "8px 12px", borderRadius: 6,
+              background: "var(--muted)", border: "1px solid var(--border)" }}>
+              <p style={{ fontSize: 11, fontWeight: 600, color: "var(--foreground)", margin: "0 0 4px" }}>
+                Market Context
               </p>
-              <p className="text-xs text-muted-foreground leading-relaxed">
+              <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: 0, lineHeight: 1.5 }}>
                 {insight.market_context}
               </p>
               {insight.related_headlines.length > 0 && (
-                <div className="mt-2 space-y-1">
-                  {insight.related_headlines.map((h, hi) => (
-                    <p
-                      key={hi}
-                      className="text-[10px] text-muted-foreground pl-2 border-l-2 border-blue-200"
-                    >
+                <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 4 }}>
+                  {insight.related_headlines.map((h, i) => (
+                    <p key={i} style={{ fontSize: 11, color: "var(--muted-foreground)", margin: 0,
+                      paddingLeft: 8, borderLeft: "2px solid var(--border)" }}>
                       {h}
                     </p>
                   ))}
@@ -135,8 +121,7 @@ function TradeAccordion({
 
 export default function CoachingTab({ analysisData, counterfactual }: Props) {
   const [report, setReport] = useState<CoachingResponse | null>(null);
-  const [tradeInsights, setTradeInsights] =
-    useState<TradeInsightsResponse | null>(null);
+  const [tradeInsights, setTradeInsights] = useState<TradeInsightsResponse | null>(null);
   const [loadingReport, setLoadingReport] = useState(false);
   const [loadingInsights, setLoadingInsights] = useState(false);
 
@@ -157,10 +142,7 @@ export default function CoachingTab({ analysisData, counterfactual }: Props) {
         };
       }
       const res = await fetchReport({ analysis });
-      if (res.ok) {
-        const data: CoachingResponse = await res.json();
-        setReport(data);
-      }
+      if (res.ok) setReport(await res.json());
     } finally {
       setLoadingReport(false);
     }
@@ -174,153 +156,117 @@ export default function CoachingTab({ analysisData, counterfactual }: Props) {
         bias_scores: analysisData.bias_scores,
         normalized_trades: analysisData.normalized_trades,
       });
-      if (res.ok) {
-        const data: TradeInsightsResponse = await res.json();
-        setTradeInsights(data);
-      }
+      if (res.ok) setTradeInsights(await res.json());
     } finally {
       setLoadingInsights(false);
     }
   };
 
-  const biasTagColor: Record<string, string> = {
-    overtrading: "bg-orange-100 text-orange-700",
-    loss_aversion: "bg-red-100 text-red-700",
-    revenge_trading: "bg-purple-100 text-purple-700",
+  const cardStyle: React.CSSProperties = {
+    background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8,
+    padding: "14px 16px",
   };
 
   return (
-    <div className="space-y-4">
-      {/* Coaching Report Card */}
-      <Card className="border-0 shadow-md">
-        <CardHeader className="pb-3 pt-4 px-4">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            🧠 AI Coaching Report
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 px-4 pb-4">
-          {!report && (
-            <div className="text-center py-6">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center mx-auto mb-3">
-                <span className="text-2xl">🧠</span>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                Generate a personalized coaching report powered by Gemini AI
-              </p>
-              <Button
-                onClick={generate}
-                disabled={loadingReport}
-                className="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-medium px-8"
-              >
-                {loadingReport ? (
-                  <span className="flex items-center gap-2">
-                    <span className="animate-spin">⏳</span> Generating…
-                  </span>
-                ) : (
-                  "Generate Report"
-                )}
-              </Button>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* Coaching Report */}
+      <div style={cardStyle}>
+        <p style={{ fontSize: 12, fontWeight: 600, color: "var(--muted-foreground)",
+          margin: "0 0 14px" }}>
+          AI Coaching Report
+        </p>
+        {!report ? (
+          <div style={{ textAlign: "center", padding: "24px 0" }}>
+            <div style={{ fontSize: 32, marginBottom: 10 }}>🧠</div>
+            <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: "0 0 14px" }}>
+              Generate a personalized coaching report powered by Gemini AI
+            </p>
+            <button onClick={generate} disabled={loadingReport}
+              style={{ padding: "9px 24px", borderRadius: 6, border: "none",
+                background: "var(--primary)", color: "#fff", fontWeight: 600,
+                fontSize: 13, cursor: loadingReport ? "not-allowed" : "pointer",
+                opacity: loadingReport ? 0.6 : 1 }}>
+              {loadingReport ? "Generating…" : "Generate Report"}
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{ fontSize: 13, color: "var(--foreground)", lineHeight: 1.7 }}>
+              <ReactMarkdown>{report.report_markdown}</ReactMarkdown>
             </div>
-          )}
-          {report && (
-            <div className="animate-slide-up space-y-4">
-              <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground">
-                <ReactMarkdown>{report.report_markdown}</ReactMarkdown>
-              </div>
-              {report.coaching_plan.length > 0 && (
-                <div className="bg-muted/30 rounded-xl p-4">
-                  <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
-                    📋 Action Plan
-                  </h4>
-                  <ol className="space-y-2">
-                    {report.coaching_plan.map((step, i) => (
-                      <li
-                        key={i}
-                        className="flex items-start gap-3 text-sm"
-                      >
-                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[11px] font-bold">
-                          {i + 1}
-                        </span>
-                        <span className="text-muted-foreground pt-0.5">
-                          {step}
-                        </span>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Trade-Level Insights Card — Accordion style */}
-      <Card className="border-0 shadow-md">
-        <CardHeader className="pb-3 pt-4 px-4">
-          <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-            🔍 Per-Trade AI Insights
-            {analysisData.flagged_trades.length > 0 && (
-              <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
-                {analysisData.flagged_trades.length} flagged trade
-                {analysisData.flagged_trades.length !== 1 ? "s" : ""}
-              </span>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 px-4 pb-4">
-          {!tradeInsights && (
-            <div className="text-center py-6">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center mx-auto mb-3">
-                <span className="text-2xl">🔍</span>
-              </div>
-              <p className="text-sm text-muted-foreground mb-1">
-                Get AI-powered explanations for each flagged trade
-              </p>
-              <p className="text-[11px] text-muted-foreground mb-4">
-                Click each trade below to see bias flags, AI analysis, and
-                market context.
-              </p>
-              <Button
-                onClick={generateInsights}
-                disabled={
-                  loadingInsights || analysisData.flagged_trades.length === 0
-                }
-                className="rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-medium px-8"
-              >
-                {loadingInsights ? (
-                  <span className="flex items-center gap-2">
-                    <span className="animate-spin">⏳</span> Analyzing trades…
-                  </span>
-                ) : (
-                  "Analyze Flagged Trades"
-                )}
-              </Button>
-            </div>
-          )}
-
-          {tradeInsights && (
-            <div className="animate-slide-up space-y-3">
-              {/* Summary */}
-              <div className="rounded-xl bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-200/50 p-4">
-                <p className="text-sm text-muted-foreground">
-                  {tradeInsights.summary}
+            {report.coaching_plan.length > 0 && (
+              <div style={{ background: "var(--muted)", borderRadius: 8, padding: 14 }}>
+                <p style={{ fontSize: 12, fontWeight: 600, color: "var(--foreground)", margin: "0 0 10px" }}>
+                  Action Plan
                 </p>
+                <ol style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 }}>
+                  {report.coaching_plan.map((step, i) => (
+                    <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontSize: 13 }}>
+                      <span style={{ width: 22, height: 22, borderRadius: "50%", background: "var(--primary)",
+                        color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                        {i + 1}
+                      </span>
+                      <span style={{ color: "var(--muted-foreground)", paddingTop: 2, lineHeight: 1.5 }}>
+                        {step}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
               </div>
+            )}
+          </div>
+        )}
+      </div>
 
-              {/* Accordion trade list */}
-              <div className="space-y-2">
-                {tradeInsights.insights.map((insight, i) => (
-                  <TradeAccordion
-                    key={i}
-                    insight={insight}
-                    biasTagColor={biasTagColor}
-                  />
-                ))}
-              </div>
-            </div>
+      {/* Per-Trade Insights */}
+      <div style={cardStyle}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+          <p style={{ fontSize: 12, fontWeight: 600, color: "var(--muted-foreground)", margin: 0 }}>
+            Per-Trade AI Insights
+          </p>
+          {analysisData.flagged_trades.length > 0 && (
+            <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 10, fontWeight: 500,
+              background: "rgba(163, 68, 93, 0.15)", color: "var(--primary)" }}>
+              {analysisData.flagged_trades.length} flagged
+            </span>
           )}
-        </CardContent>
-      </Card>
+        </div>
+        {!tradeInsights ? (
+          <div style={{ textAlign: "center", padding: "24px 0" }}>
+            <div style={{ fontSize: 32, marginBottom: 10 }}>🔍</div>
+            <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: "0 0 4px" }}>
+              Get AI-powered explanations for each flagged trade
+            </p>
+            <p style={{ fontSize: 11, color: "var(--muted-foreground)", margin: "0 0 14px" }}>
+              Click each trade to see bias flags, AI analysis, and market context.
+            </p>
+            <button onClick={generateInsights}
+              disabled={loadingInsights || analysisData.flagged_trades.length === 0}
+              style={{ padding: "9px 24px", borderRadius: 6, border: "none",
+                background: "var(--primary)", color: "#fff", fontWeight: 600,
+                fontSize: 13, cursor: loadingInsights || analysisData.flagged_trades.length === 0
+                  ? "not-allowed" : "pointer",
+                opacity: loadingInsights || analysisData.flagged_trades.length === 0 ? 0.6 : 1 }}>
+              {loadingInsights ? "Analyzing trades…" : "Analyze Flagged Trades"}
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ padding: "10px 14px", borderRadius: 8,
+              background: "var(--muted)", border: "1px solid var(--border)" }}>
+              <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: 0, lineHeight: 1.5 }}>
+                {tradeInsights.summary}
+              </p>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {tradeInsights.insights.map((insight, i) => (
+                <TradeAccordion key={i} insight={insight} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-# BiasLens — Architecture Guide
+# Tradealytics — Architecture Guide
 
 > **AI-powered trading behavior analysis.**
 > Detect cognitive biases in trading logs, simulate behavioral corrections, and get personalized AI coaching.
@@ -49,7 +49,7 @@
 
 ## 1. High-Level Overview
 
-BiasLens is a full-stack application that analyzes trading behavior to detect cognitive biases and provide AI-driven coaching:
+Tradealytics is a full-stack application that analyzes trading behavior to detect cognitive biases and provide AI-driven coaching:
 
 | Bias | Description | Detection Method |
 |------|-------------|-----------------|
@@ -232,7 +232,7 @@ QHacks_2026/
 def create_app() -> FastAPI:
     configure_logging()
     settings = get_settings()
-    app = FastAPI(title="BiasLens API", version="0.1.0")
+    app = FastAPI(title="Tradealytics API", version="0.1.0")
     app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origin_list, ...)
     app.include_router(analyze_router, prefix="/api")
     app.include_router(chat_router, prefix="/api")
@@ -461,7 +461,7 @@ The frontend uses **Next.js 14 App Router** with a single-page architecture:
 
 **`app/layout.tsx`** — Root layout:
 - Sticky header with glassmorphism backdrop blur
-- Gradient logo badge ("B" for BiasLens)
+- Gradient logo badge ("B" for Tradealytics)
 - Max-width 1400px container
 - Inter font (sans-serif)
 
@@ -845,7 +845,7 @@ services:
 **`modal_app.py`** — Serverless deployment of the FastAPI backend on [Modal](https://modal.com):
 
 ```python
-app = modal.App("biaslens-backend")
+app = modal.App("tradealytics-backend")
 
 image = (
     modal.Image.debian_slim(python_version="3.11")
@@ -854,7 +854,7 @@ image = (
     .add_local_dir("shared", remote_path="/root/shared")
 )
 
-@app.function(image=image, secrets=[modal.Secret.from_name("biaslens-secrets")],
+@app.function(image=image, secrets=[modal.Secret.from_name("tradealytics-secrets")],
               cpu=4.0, memory=8192, timeout=300, scaledown_window=120)
 @modal.concurrent(max_inputs=10)
 @modal.asgi_app()
@@ -872,7 +872,7 @@ def serve():
 | Timeout | 300s | Max request duration |
 | Scaledown window | 120s | Keep warm for 2 min after last request |
 | Max concurrent inputs | 10 | Parallel requests per container |
-| Secrets | `biaslens-secrets` | Modal secret group (GEMINI_API_KEY, etc.) |
+| Secrets | `tradealytics-secrets` | Modal secret group (GEMINI_API_KEY, etc.) |
 
 **Deploy:**
 ```bash
@@ -1199,14 +1199,14 @@ pip install modal
 modal setup  # Authenticate with Modal
 
 # 2. Create secrets in Modal dashboard (or CLI)
-modal secret create biaslens-secrets GEMINI_API_KEY=your-key NEWS_API_KEY=your-key
+modal secret create tradealytics-secrets GEMINI_API_KEY=your-key NEWS_API_KEY=your-key
 
 # 3. Deploy backend
 modal deploy modal_app.py
-# → Prints a public URL like https://your-workspace--biaslens-backend-serve.modal.run
+# → Prints a public URL like https://your-workspace--tradealytics-backend-serve.modal.run
 
 # 4. Point frontend to Modal backend
-NEXT_PUBLIC_API_URL=https://your-workspace--biaslens-backend-serve.modal.run npm run build
+NEXT_PUBLIC_API_URL=https://your-workspace--tradealytics-backend-serve.modal.run npm run build
 ```
 
 ### Usage

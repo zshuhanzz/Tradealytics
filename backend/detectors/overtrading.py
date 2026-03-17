@@ -1,7 +1,12 @@
 from __future__ import annotations
 
-import numpy as np
 import pandas as pd
+
+try:
+    import tradealytics_core
+    _USE_CPP = True
+except ImportError:
+    _USE_CPP = False
 
 
 def detect_overtrading(
@@ -23,88 +28,38 @@ def detect_overtrading(
             },
         }
 
-    result = df.copy()
-    result["trade_date"] = result["timestamp"].dt.date
+    result = tradealytics_core.detect_overtrading(
+        df["timestamp"].astype("int64").tolist(),
+        df["side"].tolist(),
+        df["symbol"].tolist(),
+        df["quantity"].tolist(),
+        df["pnl"].tolist(),
+        trades_per_day_threshold,
+        burst_window_minutes,
+        burst_threshold,
+    )
 
-    trades_per_day = result.groupby("trade_date").size()
-    avg_trades_per_day = float(trades_per_day.mean())
-    max_trades_per_day = int(trades_per_day.max())
-
-    # ── Burst detection ──
-    timestamps = result["timestamp"]
-    rolling_counts = []
-    for timestamp in timestamps:
-        in_window = (timestamps >= timestamp - pd.Timedelta(minutes=burst_window_minutes)) & (
-            timestamps <= timestamp
-        )
-        rolling_counts.append(int(in_window.sum()))
-    result["burst_count"] = rolling_counts
-    max_burst_trades = int(result["burst_count"].max()) if not result.empty else 0
-
-    # ── Position-switching detection ──
-    # Rapid buy→sell or sell→buy on same symbol within 5 minutes
-    sorted_df = result.sort_values("timestamp")
-    position_switches = 0
-    switch_indices: set[int] = set()
-    for sym, grp in sorted_df.groupby("symbol"):
-        if len(grp) < 2:
-            continue
-        sides = grp["side"].values
-        times = grp["timestamp"].values
-        idxs = grp.index.values
-        for i in range(1, len(grp)):
-            if sides[i] != sides[i - 1]:
-                gap = (times[i] - times[i - 1]) / np.timedelta64(1, "m")
-                if gap <= 5:
-                    position_switches += 1
-                    switch_indices.add(int(idxs[i]))
-
-    # ── Score ──
-    day_component = min(avg_trades_per_day / trades_per_day_threshold, 2.0)
-    burst_component = min(max_burst_trades / burst_threshold, 2.0)
-    switch_component = min(position_switches / max(len(df) * 0.05, 1), 2.0)
-    score = float(np.clip(
-        (0.45 * day_component + 0.3 * burst_component + 0.25 * switch_component) * 50,
-        0, 100,
-    ))
-
-    # ── Flags ──
-    high_day_dates = set(trades_per_day[trades_per_day > trades_per_day_threshold].index)
-    flagged_indices = set(result.index[result["burst_count"] >= burst_threshold].tolist())
-    flagged_indices.update(result.index[result["trade_date"].isin(high_day_dates)].tolist())
-    flagged_indices.update(switch_indices)
+    stats = {
+        "avg_trades_per_day": round(result.stats["avg_trades_per_day"], 2),
+        "max_trades_per_day": int(result.stats["max_trades_per_day"]),
+        "max_burst_trades": int(result.stats["max_burst_trades"]),
+        "position_switches": int(result.stats["position_switches"]),
+    }
 
     evidence = [
-        {
-            "metric": "avg_trades_per_day",
-            "value": round(avg_trades_per_day, 2),
-            "note": f"Threshold: {trades_per_day_threshold} trades/day.",
-        },
-        {
-            "metric": "max_trades_per_day",
-            "value": max_trades_per_day,
-            "note": "Highest daily activity in the sample.",
-        },
-        {
-            "metric": "max_burst_trades",
-            "value": max_burst_trades,
-            "note": f"Max trades in any {burst_window_minutes}-minute window.",
-        },
-        {
-            "metric": "position_switches",
-            "value": position_switches,
-            "note": "Rapid buy↔sell flips on same symbol within 5 min.",
-        },
+        {"metric": "avg_trades_per_day", "value": stats["avg_trades_per_day"],
+         "note": f"Threshold: {trades_per_day_threshold} trades/day."},
+        {"metric": "max_trades_per_day", "value": stats["max_trades_per_day"],
+         "note": "Highest daily activity in the sample."},
+        {"metric": "max_burst_trades", "value": stats["max_burst_trades"],
+         "note": f"Max trades in any {burst_window_minutes}-minute window."},
+        {"metric": "position_switches", "value": stats["position_switches"],
+         "note": "Rapid buy\u2194sell flips on same symbol within 5 min."},
     ]
 
     return {
-        "score": score,
-        "flags": sorted(flagged_indices),
+        "score": result.score,
+        "flags": result.flag_indices,
         "evidence": evidence,
-        "stats": {
-            "avg_trades_per_day": round(avg_trades_per_day, 2),
-            "max_trades_per_day": max_trades_per_day,
-            "max_burst_trades": max_burst_trades,
-            "position_switches": position_switches,
-        },
+        "stats": stats,
     }

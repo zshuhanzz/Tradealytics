@@ -1,5 +1,5 @@
 {
-  "name": "biaslens-frontend",
+  "name": "tradealytics-frontend",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -15,8 +15,7 @@
     "@radix-ui/react-slider": "^1.2.0",
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-tabs": "^1.1.0",
-    "@tanstack/react-table": "^8.17.0",
-    "class-variance-authority": "^0.7.0",
+"class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "lucide-react": "^0.400.0",
     "next": "^14.2.0",

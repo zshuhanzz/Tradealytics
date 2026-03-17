@@ -38,21 +38,6 @@ export async function fetchReport(payload: any): Promise<Response> {
   });
 }
 
-export async function fetchNews(
-  date: string,
-  bias: string,
-  symbols?: string[],
-  dateTo?: string
-): Promise<Response> {
-  const params = new URLSearchParams({ date, bias });
-  if (symbols && symbols.length > 0) {
-    params.set("symbols", symbols.join(","));
-  }
-  if (dateTo) {
-    params.set("date_to", dateTo);
-  }
-  return fetch(`${API_BASE}/api/news?${params}`);
-}
 
 export async function fetchTradeInsights(payload: {
   flagged_trades: any[];
