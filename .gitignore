@@ -1,0 +1,13 @@
+node_modules/
+.next/
+out/
+__pycache__/
+*.pyc
+.env
+*.pkl
+.DS_Store
+backend/ml/saved_models/*.pkl
+.venv/
+run.txt
+*venv
+.claude/
