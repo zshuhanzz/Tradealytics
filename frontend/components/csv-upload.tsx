@@ -80,46 +80,46 @@ export default function CSVUpload({ onUpload, isLoading }: Props) {
     <div>
       <div {...getRootProps()} style={{
         border: `2px dashed ${isDragActive ? "var(--primary)" : "var(--border)"}`,
-        borderRadius: 8, padding: "28px 20px", textAlign: "center", cursor: "pointer",
+        borderRadius: 12, padding: "48px 32px", textAlign: "center", cursor: "pointer",
         background: isDragActive ? "var(--muted)" : "var(--card)", transition: "all 0.15s",
       }}>
         <input {...getInputProps()} />
-        <div style={{ fontSize: 24, marginBottom: 8 }}>📂</div>
+        <div style={{ fontSize: 36, marginBottom: 12 }}>📂</div>
         {file ? (
-          <p style={{ fontSize: 13, color: "var(--foreground)", fontWeight: 500, margin: 0 }}>
+          <p style={{ fontSize: 15, color: "var(--foreground)", fontWeight: 500, margin: 0 }}>
             {file.name}
-            <span style={{ color: "var(--muted-foreground)", fontWeight: 400, marginLeft: 6 }}>
+            <span style={{ color: "var(--muted-foreground)", fontWeight: 400, marginLeft: 8 }}>
               ({(file.size / 1024).toFixed(0)} KB)
             </span>
           </p>
         ) : (
           <>
-            <p style={{ fontSize: 13, color: "var(--foreground)", margin: "0 0 4px" }}>
+            <p style={{ fontSize: 15, color: "var(--foreground)", margin: "0 0 6px", fontWeight: 500 }}>
               {isDragActive ? "Drop it here" : "Drag & drop a CSV file"}
             </p>
-            <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: 0 }}>or click to browse</p>
+            <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: 0 }}>or click to browse</p>
           </>
         )}
       </div>
 
       {headers.length > 0 && (
-        <div style={{ marginTop: 14 }}>
-          <p style={{ fontSize: 11, color: "var(--muted-foreground)", marginBottom: 8 }}>
+        <div style={{ marginTop: 18 }}>
+          <p style={{ fontSize: 12, color: "var(--muted-foreground)", marginBottom: 10 }}>
             Column mapping — auto-detected, adjust if needed
           </p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 12px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 16px" }}>
             {[...REQUIRED_FIELDS, ...OPTIONAL_FIELDS].map((field) => (
               <div key={field}>
-                <label style={{ fontSize: 11, color: "var(--muted-foreground)",
-                  display: "block", marginBottom: 3 }}>
+                <label style={{ fontSize: 12, color: "var(--muted-foreground)",
+                  display: "block", marginBottom: 4 }}>
                   {field}{REQUIRED_FIELDS.includes(field as any) ? " *" : ""}
                 </label>
                 <select
                   value={(mapping as any)[field] ?? ""}
                   onChange={(e) => setMapping((m) => ({ ...m, [field]: e.target.value || undefined }))}
                   style={{ width: "100%", background: "var(--input-bg)",
-                    border: "1px solid var(--border)", borderRadius: 6,
-                    padding: "6px 8px", color: "var(--foreground)", fontSize: 12, outline: "none" }}>
+                    border: "1px solid var(--border)", borderRadius: 7,
+                    padding: "8px 10px", color: "var(--foreground)", fontSize: 13, outline: "none" }}>
                   <option value="">— not mapped —</option>
                   {headers.map((h) => <option key={h} value={h}>{h}</option>)}
                 </select>
@@ -130,17 +130,17 @@ export default function CSVUpload({ onUpload, isLoading }: Props) {
       )}
 
       {error && (
-        <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 6,
-          background: "var(--danger-muted)", color: "var(--danger)", fontSize: 12 }}>
+        <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: 8,
+          background: "var(--danger-muted)", color: "var(--danger)", fontSize: 13 }}>
           {error}
         </div>
       )}
 
       {file && (
         <button onClick={handleSubmit} disabled={isLoading}
-          style={{ marginTop: 14, width: "100%", padding: "10px 0", borderRadius: 6,
+          style={{ marginTop: 18, width: "100%", padding: "13px 0", borderRadius: 8,
             background: "var(--primary)", color: "#fff", border: "none", fontWeight: 600,
-            fontSize: 13, cursor: isLoading ? "not-allowed" : "pointer",
+            fontSize: 14, cursor: isLoading ? "not-allowed" : "pointer",
             opacity: isLoading ? 0.6 : 1, transition: "opacity 0.15s" }}>
           {isLoading ? "Analyzing…" : "Analyze Trades"}
         </button>

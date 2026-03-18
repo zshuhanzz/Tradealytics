@@ -61,9 +61,9 @@ function ThemeToggle() {
   };
   return (
     <button onClick={toggle} style={{ color: "var(--muted-foreground)", background: "none",
-      border: "1px solid var(--border)", borderRadius: 6, padding: "5px 8px", cursor: "pointer",
+      border: "1px solid var(--border)", borderRadius: 10, padding: "11px 16px", cursor: "pointer",
       display: "flex", alignItems: "center" }}>
-      <Icon path={dark ? ICONS.sun : ICONS.moon} size={15} />
+      <Icon path={dark ? ICONS.sun : ICONS.moon} size={26} />
     </button>
   );
 }
@@ -121,32 +121,37 @@ export default function Home() {
   if (!data) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center",
-        justifyContent: "center", background: "var(--background)" }}>
-        <div style={{ width: "100%", maxWidth: 480, padding: "0 24px" }}>
+        justifyContent: "center", background: "var(--background)", position: "relative" }}>
+        {/* Theme toggle — top right */}
+        <div style={{ position: "absolute", top: 28, right: 80 }}>
+          <ThemeToggle />
+        </div>
+        <div style={{ width: "100%", maxWidth: 640, padding: "0 32px" }}>
           {/* Logo */}
-          <div style={{ textAlign: "center", marginBottom: 36 }}>
-            <div style={{ width: 52, height: 52, borderRadius: 12,
+          <div style={{ textAlign: "center", marginBottom: 48 }}>
+            <div style={{ width: 72, height: 72, borderRadius: 18,
               background: "var(--primary)", display: "flex", alignItems: "center",
-              justifyContent: "center", margin: "0 auto 16px" }}>
-              <span style={{ color: "#fff", fontSize: 22, fontWeight: 700 }}>T</span>
+              justifyContent: "center", margin: "0 auto 20px",
+              boxShadow: "0 4px 24px rgba(0,0,0,0.15)" }}>
+              <span style={{ color: "#fff", fontSize: 30, fontWeight: 700 }}>T</span>
             </div>
-            <h1 style={{ fontSize: 28, fontWeight: 700, margin: "0 0 8px",
+            <h1 style={{ fontSize: 36, fontWeight: 700, margin: "0 0 10px",
               color: "var(--foreground)" }}>Tradealytics</h1>
-            <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: 0 }}>
+            <p style={{ fontSize: 15, color: "var(--muted-foreground)", margin: 0, lineHeight: 1.6 }}>
               Upload your trade log to detect behavioral biases and get AI coaching.
             </p>
           </div>
 
           {/* Analysis mode */}
-          <div style={{ marginBottom: 20 }}>
-            <p style={{ fontSize: 11, color: "var(--muted-foreground)", marginBottom: 8,
-              textTransform: "uppercase", letterSpacing: "0.06em" }}>Analysis Method</p>
+          <div style={{ marginBottom: 28 }}>
+            <p style={{ fontSize: 11, color: "var(--muted-foreground)", marginBottom: 10,
+              textTransform: "uppercase", letterSpacing: "0.08em" }}>Analysis Method</p>
             <div style={{ display: "flex", gap: 6, background: "var(--muted)",
-              borderRadius: 8, padding: 4 }}>
+              borderRadius: 10, padding: 5 }}>
               {(["rules_only", "mixed", "ml_only"] as const).map((m) => (
                 <button key={m} onClick={() => setAnalysisMode(m)}
-                  style={{ flex: 1, padding: "7px 4px", borderRadius: 6, border: "none",
-                    cursor: "pointer", fontSize: 12, fontWeight: 500,
+                  style={{ flex: 1, padding: "14px 4px", borderRadius: 8, border: "none",
+                    cursor: "pointer", fontSize: 15, fontWeight: 500,
                     background: analysisMode === m ? "var(--card)" : "transparent",
                     color: analysisMode === m ? "var(--foreground)" : "var(--muted-foreground)",
                     transition: "all 0.15s" }}>
@@ -157,11 +162,11 @@ export default function Home() {
           </div>
 
           {loading ? (
-            <div style={{ textAlign: "center", padding: "40px 0" }}>
-              <p style={{ color: "var(--muted-foreground)", fontSize: 13 }}>
+            <div style={{ textAlign: "center", padding: "60px 0" }}>
+              <p style={{ color: "var(--muted-foreground)", fontSize: 15 }}>
                 Analyzing your trades…
               </p>
-              <div style={{ marginTop: 12, height: 4, borderRadius: 2,
+              <div style={{ marginTop: 16, height: 4, borderRadius: 2,
                 background: "var(--muted)", overflow: "hidden" }}>
                 <div className="skeleton" style={{ height: "100%" }} />
               </div>
@@ -171,16 +176,12 @@ export default function Home() {
           )}
 
           {error && (
-            <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: 6,
+            <div style={{ marginTop: 16, padding: "12px 18px", borderRadius: 8,
               background: "var(--danger-muted)", border: "1px solid var(--danger)",
-              color: "var(--danger)", fontSize: 13 }}>
+              color: "var(--danger)", fontSize: 14 }}>
               {error}
             </div>
           )}
-
-          <div style={{ marginTop: 24, textAlign: "center" }}>
-            <ThemeToggle />
-          </div>
         </div>
       </div>
     );
@@ -221,18 +222,15 @@ export default function Home() {
         {/* Spacer */}
         <div style={{ flex: 1 }} />
 
-        {/* Bottom controls */}
+        {/* Reset button */}
         <button onClick={() => { setData(null); setCounterfactual(null); }}
           title="New Analysis"
           style={{ width: 40, height: 40, borderRadius: 8, border: "none",
             cursor: "pointer", display: "flex", alignItems: "center",
             justifyContent: "center", background: "transparent",
-            color: "var(--muted-foreground)", marginBottom: 4 }}>
+            color: "var(--muted-foreground)", marginBottom: 12 }}>
           <Icon path={ICONS.reset} size={16} />
         </button>
-        <div style={{ marginBottom: 12 }}>
-          <ThemeToggle />
-        </div>
       </aside>
 
       {/* Main content */}
@@ -250,6 +248,9 @@ export default function Home() {
             {data.normalized_trades.length} trades
             {data.feature_stats?.ml_active ? " · ML active" : ""}
           </span>
+          <div style={{ marginLeft: "auto" }}>
+            <ThemeToggle />
+          </div>
         </header>
 
         {/* Stats strip */}
