@@ -11,7 +11,7 @@ from backend.core.schemas import (
     TradeInsightsRequest,
     TradeInsightsResponse,
 )
-from backend.llm.gemini_client import search_ticker_news, generate_trade_insights
+from backend.llm.gemini_client import generate_trade_insights
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -39,14 +39,8 @@ def get_trade_insights(payload: TradeInsightsRequest) -> TradeInsightsResponse:
             else:
                 date_range = ["2025-01-01", "2025-12-31"]
 
-        # Use Gemini + Google Search grounding to find relevant news
-        news_result = search_ticker_news(
-            symbols=symbols,
-            date_from=date_range[0],
-            date_to=date_range[1],
-        )
-        headlines = news_result.get("headlines", [])
-        search_context = news_result.get("context", "")
+        headlines = []
+        search_context = ""
 
         # Prepare flagged trades as dicts for Gemini
         flagged_dicts = [

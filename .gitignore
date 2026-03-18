@@ -3,6 +3,7 @@ node_modules/
 out/
 __pycache__/
 *.pyc
+backend/.env
 .env
 *.pkl
 .DS_Store

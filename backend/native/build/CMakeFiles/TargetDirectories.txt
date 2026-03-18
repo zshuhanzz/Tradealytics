@@ -1,0 +1,3 @@
+C:/Users/shuha/Downloads/Tradealytics/backend/native/build/CMakeFiles/tradealytics_core.dir
+C:/Users/shuha/Downloads/Tradealytics/backend/native/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/shuha/Downloads/Tradealytics/backend/native/build/CMakeFiles/ZERO_CHECK.dir
