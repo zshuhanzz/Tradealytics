@@ -12,3 +12,6 @@ backend/ml/saved_models/*.pkl
 run.txt
 *venv
 .claude/
+backend/native/build/
+backend/*.pyd
+backend/*.so
