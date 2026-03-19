@@ -34,7 +34,7 @@ export default function TradeTable({ trades, flaggedTrades }: Props) {
   };
 
   const rows = useMemo(() => {
-    let result = trades.map((t, i) => ({ ...t, _idx: i }));
+    let result = trades.map((t, i) => ({ ...t, _idx: i } as Record<string, any>));
     if (filter) {
       const f = filter.toLowerCase();
       result = result.filter(r =>
