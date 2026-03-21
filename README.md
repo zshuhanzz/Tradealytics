@@ -69,7 +69,6 @@
 ### Prerequisites
 - Python 3.11+ (with pip)
 - Node.js 18+
-- A [Gemini API key](https://aistudio.google.com/)
 
 ### 1. Clone & configure
 
@@ -107,7 +106,7 @@ python -m uvicorn backend.main:app --reload --port 8000
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) 🎉
+Open [http://localhost:3000](http://localhost:3000)
 
 ---
 

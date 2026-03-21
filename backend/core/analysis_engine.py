@@ -201,7 +201,7 @@ def analyze_biases(df: pd.DataFrame, use_ml: bool = False, analysis_mode: str = 
             final_score = round(ml_score, 2)
         else:  # MODE_MIXED
             ml_score = float(ml_probabilities.get(bias_name, 0.0)) * 100
-            final_score = round((0.6 * detector_score) + (0.4 * ml_score), 2)
+            final_score = round((0.5 * detector_score) + (0.5 * ml_score), 2)
 
         rationale = _rationale_for_bias(bias_name, final_score, detector_output[bias_name]["stats"])
         if ml_active and analysis_mode != MODE_RULES_ONLY:
@@ -295,7 +295,7 @@ def analyze_biases(df: pd.DataFrame, use_ml: bool = False, analysis_mode: str = 
         if analysis_mode == MODE_ML_ONLY:
             calm_score = round(ml_calm, 2)
         else:  # mixed
-            calm_score = round(0.6 * rule_calm + 0.4 * ml_calm, 2)
+            calm_score = round(0.5 * rule_calm + 0.5 * ml_calm, 2)
         calm_rationale = f"Composite discipline score. ML calm confidence: {ml_calm:.0f}%."
     else:
         calm_score = rule_calm

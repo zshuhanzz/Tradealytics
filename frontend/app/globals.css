@@ -22,6 +22,7 @@
   --sidebar-border: #243B32;
   --input-bg: #1F3830;
   --ring: #7BAEC8;
+  --bg-image: url('/images/tradealytics_dark.png');
 }
 
 /* ── Light theme ── */
@@ -44,6 +45,7 @@
   --sidebar-border: #72A8BC;
   --input-bg: #EDF6F1;
   --ring: #2D5247;
+  --bg-image: url('/images/tradealytics_light.png');
 }
 
 @layer base {

@@ -63,6 +63,18 @@ export async function fetchShapExplain(
   });
 }
 
+export async function lookupUser(username: string): Promise<Response> {
+  return fetch(`${API_BASE}/api/users/lookup?username=${encodeURIComponent(username)}`);
+}
+
+export async function createUser(username: string): Promise<Response> {
+  return fetch(`${API_BASE}/api/users`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username }),
+  });
+}
+
 export async function sendChatMessage(
   messages: { role: string; text: string }[],
   analysisContext: Record<string, any>

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import type { AnalyzeResponse, ColumnMapping, CounterfactualResponse } from "@/types";
-import { analyzeCSV, type AnalysisMode } from "@/lib/api";
+import { useState, useMemo, useRef, useEffect } from "react";
+import type { AnalyzeResponse, ColumnMapping, CounterfactualResponse, User } from "@/types";
+import { analyzeCSV, lookupUser, createUser, type AnalysisMode } from "@/lib/api";
 import CSVUpload from "@/components/csv-upload";
 import BiasScoreCards from "@/components/bias-scorecards";
 import TradeTable from "@/components/trade-table";
@@ -31,6 +31,7 @@ const ICONS = {
   sun:         "M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z",
   moon:        "M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z",
   reset:       "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5",
+  userPlus:    "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M19 8v6M22 11h-6",
 };
 
 type Section = "insights" | "timeline" | "whatif" | "coaching" | "chat";
@@ -88,6 +89,72 @@ export default function Home() {
   const [analysisMode, setAnalysisMode] = useState<AnalysisMode>("mixed");
   const [activeSection, setActiveSection] = useState<Section>("insights");
 
+  // ── User state ──
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [usernameInput, setUsernameInput] = useState("Shuhan");
+  const [lookupStatus, setLookupStatus] = useState<"idle" | "found" | "not_found">("idle");
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [newUsername, setNewUsername] = useState("");
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [createLoading, setCreateLoading] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target as Node)) {
+        setShowProfileMenu(false);
+        setCreateError(null);
+        setNewUsername("");
+      }
+    };
+    if (showProfileMenu) document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showProfileMenu]);
+
+  const handleUserLookup = async () => {
+    if (!usernameInput.trim()) return;
+    setLookupLoading(true);
+    setLookupStatus("idle");
+    try {
+      const res = await lookupUser(usernameInput.trim());
+      if (res.ok) {
+        const user: User = await res.json();
+        setCurrentUser(user);
+        setLookupStatus("found");
+      } else {
+        setCurrentUser(null);
+        setLookupStatus("not_found");
+      }
+    } catch {
+      setLookupStatus("not_found");
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
+  const handleCreateUser = async () => {
+    if (!newUsername.trim()) return;
+    setCreateLoading(true);
+    setCreateError(null);
+    try {
+      const res = await createUser(newUsername.trim());
+      if (res.ok) {
+        const user: User = await res.json();
+        setCurrentUser(user);
+        setShowProfileMenu(false);
+        setNewUsername("");
+      } else {
+        const err = await res.json().catch(() => ({ detail: "Failed to create account" }));
+        setCreateError(err.detail || "Failed to create account");
+      }
+    } catch {
+      setCreateError("Failed to create account");
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
   const handleUpload = async (file: File, mapping?: ColumnMapping) => {
     setLoading(true);
     setError(null);
@@ -117,11 +184,13 @@ export default function Home() {
     return { totalPnl, wins, winRate, avgPnl, maxWin, maxLoss };
   }, [data]);
 
-  // ── Upload / loading screen ─────────────────────────────────────────────────
+  // ── Upload/loading screen ─────────────────────────────────────────────────
   if (!data) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center",
-        justifyContent: "center", background: "var(--background)", position: "relative" }}>
+        justifyContent: "center", position: "relative",
+        backgroundImage: "var(--bg-image)", backgroundSize: "cover",
+        backgroundPosition: "center", backgroundColor: "var(--background)" }}>
         {/* Theme toggle — top right */}
         <div style={{ position: "absolute", top: 28, right: 80 }}>
           <ThemeToggle />
@@ -129,36 +198,50 @@ export default function Home() {
         <div style={{ width: "100%", maxWidth: 640, padding: "0 32px" }}>
           {/* Logo */}
           <div style={{ textAlign: "center", marginBottom: 48 }}>
-            <div style={{ width: 72, height: 72, borderRadius: 18,
-              background: "var(--primary)", display: "flex", alignItems: "center",
-              justifyContent: "center", margin: "0 auto 20px",
-              boxShadow: "0 4px 24px rgba(0,0,0,0.15)" }}>
-              <span style={{ color: "#fff", fontSize: 30, fontWeight: 700 }}>T</span>
-            </div>
+            <img src="/images/tradealytics_logo_t.png" alt="Tradealytics"
+              style={{ width: 280, height: 280, objectFit: "contain", margin: "10px auto -60px", display: "block" }} />
             <h1 style={{ fontSize: 36, fontWeight: 700, margin: "0 0 10px",
               color: "var(--foreground)" }}>Tradealytics</h1>
-            <p style={{ fontSize: 15, color: "var(--muted-foreground)", margin: 0, lineHeight: 1.6 }}>
+            <p style={{ fontSize: 15, color: "var(--foreground)", margin: 0, lineHeight: 1.6 }}>
               Upload your trade log to detect behavioral biases and get AI coaching.
             </p>
           </div>
 
-          {/* Analysis mode */}
-          <div style={{ marginBottom: 28 }}>
-            <p style={{ fontSize: 11, color: "var(--muted-foreground)", marginBottom: 10,
-              textTransform: "uppercase", letterSpacing: "0.08em" }}>Analysis Method</p>
-            <div style={{ display: "flex", gap: 6, background: "var(--muted)",
-              borderRadius: 10, padding: 5 }}>
-              {(["rules_only", "mixed", "ml_only"] as const).map((m) => (
-                <button key={m} onClick={() => setAnalysisMode(m)}
-                  style={{ flex: 1, padding: "14px 4px", borderRadius: 8, border: "none",
-                    cursor: "pointer", fontSize: 15, fontWeight: 500,
-                    background: analysisMode === m ? "var(--card)" : "transparent",
-                    color: analysisMode === m ? "var(--foreground)" : "var(--muted-foreground)",
-                    transition: "all 0.15s" }}>
-                  {m === "rules_only" ? "Rules Only" : m === "mixed" ? "Mixed" : "ML Only"}
-                </button>
-              ))}
+          {/* Username lookup */}
+          <div style={{ marginBottom: 20 }}>
+            <p style={{ fontSize: 11, color: "var(--foreground)", marginBottom: 8,
+              textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>
+              Your Username
+            </p>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input
+                value={usernameInput}
+                onChange={(e) => { setUsernameInput(e.target.value); setLookupStatus("idle"); }}
+                onKeyDown={(e) => e.key === "Enter" && handleUserLookup()}
+                placeholder="Enter username"
+                style={{ flex: 1, padding: "10px 14px", borderRadius: 8, fontSize: 14,
+                  background: "var(--muted)", border: "1px solid var(--border)",
+                  color: "var(--foreground)", outline: "none" }}
+              />
+              <button
+                onClick={handleUserLookup}
+                disabled={lookupLoading || !usernameInput.trim()}
+                style={{ padding: "10px 18px", borderRadius: 8, border: "none",
+                  background: "var(--primary)", color: "#fff", fontWeight: 600,
+                  fontSize: 14, cursor: "pointer", opacity: lookupLoading ? 0.6 : 1 }}>
+                {lookupLoading ? "…" : "Enter"}
+              </button>
             </div>
+            {lookupStatus === "found" && currentUser && (
+              <p style={{ marginTop: 8, fontSize: 13, color: "var(--success)", fontWeight: 500 }}>
+                Welcome back, {currentUser.username}!
+              </p>
+            )}
+            {lookupStatus === "not_found" && (
+              <p style={{ marginTop: 8, fontSize: 13, color: "var(--muted-foreground)" }}>
+                User not found. You can create an account after analyzing.
+              </p>
+            )}
           </div>
 
           {loading ? (
@@ -174,6 +257,25 @@ export default function Home() {
           ) : (
             <CSVUpload onUpload={handleUpload} isLoading={loading} />
           )}
+
+          {/* Analysis mode */}
+          <div style={{ marginTop: 20 }}>
+            <p style={{ fontSize: 11, color: "var(--foreground)", marginBottom: 10,
+              textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>Analysis Method</p>
+            <div style={{ display: "flex", gap: 6, background: "var(--muted)",
+              borderRadius: 10, padding: 5 }}>
+              {(["rules_only", "mixed", "ml_only"] as const).map((m) => (
+                <button key={m} onClick={() => setAnalysisMode(m)}
+                  style={{ flex: 1, padding: "14px 4px", borderRadius: 8, border: "none",
+                    cursor: "pointer", fontSize: 15, fontWeight: 500,
+                    background: analysisMode === m ? "var(--card)" : "transparent",
+                    color: analysisMode === m ? "var(--foreground)" : "var(--muted-foreground)",
+                    transition: "all 0.15s" }}>
+                  {m === "rules_only" ? "Rules Only" : m === "mixed" ? "Mixed" : "ML Only"}
+                </button>
+              ))}
+            </div>
+          </div>
 
           {error && (
             <div style={{ marginTop: 16, padding: "12px 18px", borderRadius: 8,
@@ -198,9 +300,75 @@ export default function Home() {
         flexDirection: "column", alignItems: "center", paddingTop: 16, gap: 4 }}>
 
         {/* Logo */}
-        <div style={{ width: 32, height: 32, borderRadius: 8, background: "var(--primary)",
-          display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
-          <span style={{ color: "#fff", fontSize: 14, fontWeight: 700 }}>T</span>
+        <div style={{ marginBottom: 8 }}>
+          <img src="/images/tradealytics_logo_t.png" alt="Tradealytics"
+            style={{ width: 40, height: 40, objectFit: "contain" }} />
+        </div>
+
+        {/* Profile button */}
+        <div style={{ position: "relative", marginBottom: 8 }} ref={profileMenuRef}>
+          <button
+            onClick={() => { setShowProfileMenu((v) => !v); setCreateError(null); setNewUsername(""); }}
+            title={currentUser ? currentUser.username : "Create Account"}
+            style={{ width: 40, height: 40, borderRadius: 8, border: "none",
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              background: currentUser ? "var(--primary)" : "transparent",
+              color: currentUser ? "#fff" : "var(--muted-foreground)", transition: "all 0.15s",
+              fontSize: 13, fontWeight: 700 }}>
+            {currentUser
+              ? currentUser.username.charAt(0).toUpperCase()
+              : <Icon path={ICONS.userPlus} size={17} />}
+          </button>
+
+          {/* Profile panel */}
+          {showProfileMenu && (
+            <div style={{ position: "absolute", left: 48, top: 0, zIndex: 50,
+              background: "var(--card)", border: "1px solid var(--border)",
+              borderRadius: 10, padding: 14, width: 220, boxShadow: "0 4px 20px rgba(0,0,0,0.3)" }}>
+              {currentUser ? (
+                <div>
+                  <p style={{ fontSize: 11, color: "var(--muted-foreground)",
+                    textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
+                    Logged in as
+                  </p>
+                  <p style={{ fontSize: 15, fontWeight: 600, color: "var(--foreground)" }}>
+                    {currentUser.username}
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: "var(--foreground)",
+                    marginBottom: 10 }}>
+                    Create Account
+                  </p>
+                  <input
+                    value={newUsername}
+                    onChange={(e) => { setNewUsername(e.target.value); setCreateError(null); }}
+                    onKeyDown={(e) => e.key === "Enter" && handleCreateUser()}
+                    placeholder="Choose a username"
+                    autoFocus
+                    style={{ width: "100%", padding: "8px 10px", borderRadius: 6, fontSize: 13,
+                      background: "var(--muted)", border: `1px solid ${createError ? "var(--danger)" : "var(--border)"}`,
+                      color: "var(--foreground)", outline: "none", boxSizing: "border-box" }}
+                  />
+                  {createError && (
+                    <p style={{ fontSize: 12, color: "var(--danger)", marginTop: 6 }}>
+                      {createError}
+                    </p>
+                  )}
+                  <button
+                    onClick={handleCreateUser}
+                    disabled={createLoading || !newUsername.trim()}
+                    style={{ marginTop: 10, width: "100%", padding: "8px 0", borderRadius: 6,
+                      border: "none", background: "var(--primary)", color: "#fff",
+                      fontWeight: 600, fontSize: 13, cursor: "pointer",
+                      opacity: createLoading || !newUsername.trim() ? 0.6 : 1 }}>
+                    {createLoading ? "Creating…" : "Create"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Nav items */}

@@ -17,7 +17,6 @@ FEATURE_NAMES: list[str] = [
     "burst_count_60s",
     "pnl_mean",
     "pnl_std",
-    "pnl_total",
     "win_rate",
     "avg_quantity",
     "std_quantity",
@@ -27,7 +26,6 @@ FEATURE_NAMES: list[str] = [
     "reentry_after_loss_mean_sec",
     "consecutive_loss_streak_max",
     "side_switch_rate",
-    "unique_symbols",
     "balance_drawdown_pct",
 ]
 
@@ -53,10 +51,7 @@ def extract_features(df: pd.DataFrame) -> np.ndarray:
         balance,
     )
 
-    # Patch unique_symbols (not available per-window in C++ without symbol array)
-    arr = np.array(feat, dtype=float)
-    arr[16] = float(df["symbol"].nunique())
-    return arr
+    return np.array(feat, dtype=float)
 
 
 def extract_windowed_features(

@@ -1,5 +1,10 @@
 // ─── Tradealytics frontend types (aligned with backend schemas) ───
 
+export interface User {
+  id: number;
+  username: string;
+}
+
 export interface Trade {
   timestamp: string;
   side: string;

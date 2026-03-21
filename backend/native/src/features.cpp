@@ -4,7 +4,7 @@
 #include <cmath>
 #include <numeric>
 
-// Returns 18 behavioral features from a window of trades.
+// Returns 16 behavioral features from a window of trades.
 // Feature order matches FEATURE_NAMES in backend/ml/features.py.
 std::vector<double> extract_features(
     const std::vector<double>& timestamps,
@@ -15,7 +15,7 @@ std::vector<double> extract_features(
     const std::vector<double>& balance)
 {
     int n = static_cast<int>(timestamps.size());
-    std::vector<double> feat(18, 0.0);
+    std::vector<double> feat(16, 0.0);
 
     if (n < 2) return feat;
 
@@ -45,7 +45,6 @@ std::vector<double> extract_features(
     double pnl_sum = std::accumulate(pnl.begin(), pnl.end(), 0.0);
     double pnl_mean = pnl_sum / n;
     feat[4] = pnl_mean;
-    feat[6] = pnl_sum;  // pnl_total
 
     double pnl_var = 0.0;
     for (double p : pnl) pnl_var += (p - pnl_mean) * (p - pnl_mean);
@@ -53,21 +52,21 @@ std::vector<double> extract_features(
 
     int wins = 0;
     for (double p : pnl) if (p > 0) wins++;
-    feat[7] = static_cast<double>(wins) / n;  // win_rate
+    feat[6] = static_cast<double>(wins) / n;  // win_rate
 
     // ── Size features ────────────────────────────────────────────────────────
     double qty_sum = std::accumulate(quantities.begin(), quantities.end(), 0.0);
     double avg_qty = qty_sum / n;
-    feat[8] = avg_qty;
+    feat[7] = avg_qty;
 
     double qty_var = 0.0;
     for (double q : quantities) qty_var += (q - avg_qty) * (q - avg_qty);
-    feat[9] = std::sqrt(qty_var / n);  // std_quantity
+    feat[8] = std::sqrt(qty_var / n);  // std_quantity
 
     double tv_sum = 0.0;
     for (int i = 0; i < n; i++)
         tv_sum += quantities[i] * (i < static_cast<int>(prices.size()) ? prices[i] : 1.0);
-    feat[10] = tv_sum / n;  // avg_trade_value
+    feat[9] = tv_sum / n;  // avg_trade_value
 
     // ── Loss aversion: hold-time proxy ───────────────────────────────────────
     // Use inter-trade delta as hold proxy for each trade
@@ -85,7 +84,7 @@ std::vector<double> extract_features(
     }
     double avg_win_hold  = win_count  > 0 ? win_hold_sum  / win_count  : 1.0;
     double avg_loss_hold = loss_count > 0 ? loss_hold_sum / loss_count : 1.0;
-    feat[11] = avg_loss_hold / std::max(avg_win_hold, 0.001);  // loss_hold_to_win_hold_ratio
+    feat[10] = avg_loss_hold / std::max(avg_win_hold, 0.001);  // loss_hold_to_win_hold_ratio
 
     // ── Revenge trading features ─────────────────────────────────────────────
     std::vector<double> sizes_after_loss;
@@ -100,16 +99,16 @@ std::vector<double> extract_features(
 
     if (!sizes_after_loss.empty()) {
         double s = std::accumulate(sizes_after_loss.begin(), sizes_after_loss.end(), 0.0);
-        feat[12] = s / sizes_after_loss.size();
+        feat[11] = s / sizes_after_loss.size();
     } else {
-        feat[12] = 1.0;
+        feat[11] = 1.0;
     }
 
     if (!reentry_times_after_loss.empty()) {
         double s = std::accumulate(reentry_times_after_loss.begin(), reentry_times_after_loss.end(), 0.0);
-        feat[13] = s / reentry_times_after_loss.size();
+        feat[12] = s / reentry_times_after_loss.size();
     } else {
-        feat[13] = 300.0;
+        feat[12] = 300.0;
     }
 
     // Max consecutive loss streak
@@ -118,7 +117,7 @@ std::vector<double> extract_features(
         if (p <= 0.0) { cur_streak++; max_streak = std::max(max_streak, cur_streak); }
         else cur_streak = 0;
     }
-    feat[14] = static_cast<double>(max_streak);
+    feat[13] = static_cast<double>(max_streak);
 
     // ── Diversity features ───────────────────────────────────────────────────
     int side_changes = 0;
@@ -129,8 +128,7 @@ std::vector<double> extract_features(
         std::transform(curr.begin(), curr.end(), curr.begin(), ::tolower);
         if (prev != curr) side_changes++;
     }
-    feat[15] = static_cast<double>(side_changes) / std::max(n - 1, 1);  // side_switch_rate
-    feat[16] = 1.0;  // unique_symbols — not available per-window without symbol array; use 1 as placeholder
+    feat[14] = static_cast<double>(side_changes) / std::max(n - 1, 1);  // side_switch_rate
 
     // ── Balance drawdown ────────────────────────────────────────────────────
     if (!balance.empty() && static_cast<int>(balance.size()) == n) {
@@ -141,9 +139,9 @@ std::vector<double> extract_features(
             double dd = running_max > 0 ? (running_max - b) / running_max : 0.0;
             if (dd > max_dd) max_dd = dd;
         }
-        feat[17] = max_dd * 100.0;
+        feat[15] = max_dd * 100.0;
     } else {
-        feat[17] = 0.0;
+        feat[15] = 0.0;
     }
 
     return feat;

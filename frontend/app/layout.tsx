@@ -4,6 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Tradealytics – Trading Behavior Analysis",
   description: "AI-powered trading bias detection and coaching.",
+  icons: { icon: "/images/tradealytics_logo_t.png" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
