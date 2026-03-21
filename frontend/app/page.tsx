@@ -10,6 +10,7 @@ import InsightsCharts from "@/components/insights-charts";
 import CounterfactualPanel from "@/components/counterfactual-panel";
 import CoachingTab from "@/components/coaching-tab";
 import ChatPanel from "@/components/chat-panel";
+import ProgressTab from "@/components/progress-tab";
 import { formatCurrency } from "@/lib/utils";
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
@@ -32,9 +33,10 @@ const ICONS = {
   moon:        "M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z",
   reset:       "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5",
   userPlus:    "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M19 8v6M22 11h-6",
+  progress:    "M22 7l-9.5 9.5-5-5L2 17",
 };
 
-type Section = "insights" | "timeline" | "whatif" | "coaching" | "chat";
+type Section = "insights" | "timeline" | "whatif" | "coaching" | "chat" | "progress";
 
 const NAV_ITEMS: { id: Section; label: string; iconKey: keyof typeof ICONS }[] = [
   { id: "insights",  label: "Insights",  iconKey: "insights" },
@@ -42,6 +44,7 @@ const NAV_ITEMS: { id: Section; label: string; iconKey: keyof typeof ICONS }[] =
   { id: "whatif",    label: "What-If",   iconKey: "whatif" },
   { id: "coaching",  label: "Coaching",  iconKey: "coaching" },
   { id: "chat",      label: "Chat",      iconKey: "chat" },
+  { id: "progress",  label: "Progress",  iconKey: "progress" },
 ];
 
 // ── Theme toggle (inlined) ────────────────────────────────────────────────────
@@ -477,6 +480,9 @@ export default function Home() {
           )}
           {activeSection === "chat" && (
             <ChatPanel analysisData={data} />
+          )}
+          {activeSection === "progress" && (
+            <ProgressTab currentUser={currentUser} />
           )}
         </div>
       </div>
