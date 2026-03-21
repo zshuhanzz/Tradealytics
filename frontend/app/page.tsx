@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import type { AnalyzeResponse, ColumnMapping, CounterfactualResponse, User } from "@/types";
-import { analyzeCSV, lookupUser, createUser, type AnalysisMode } from "@/lib/api";
+import { analyzeCSV, lookupUser, createUser, saveSession, type AnalysisMode } from "@/lib/api";
 import CSVUpload from "@/components/csv-upload";
 import BiasScoreCards from "@/components/bias-scorecards";
 import TradeTable from "@/components/trade-table";
@@ -164,7 +164,19 @@ export default function Home() {
         const errData = await res.json().catch(() => ({ detail: res.statusText }));
         throw new Error(errData.detail || "Analysis failed");
       }
-      setData(await res.json());
+      const result = await res.json();
+      setData(result);
+
+      // Save session to DB (fire-and-forget, don't block UI)
+      saveSession({
+        user_id: currentUser?.id,
+        analysis_mode: analysisMode,
+        trade_count: result.feature_stats?.trade_count ?? 0,
+        overtrading_score: result.bias_scores?.overtrading?.score ?? 0,
+        loss_aversion_score: result.bias_scores?.loss_aversion?.score ?? 0,
+        revenge_score: result.bias_scores?.revenge_trading?.score ?? 0,
+        calm_score: result.bias_scores?.calm?.score ?? 0,
+      }).catch(() => {}); // silently ignore if DB is unreachable
     } catch (err: any) {
       setError(err.message);
     } finally {
