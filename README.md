@@ -119,41 +119,5 @@ timestamp,side,symbol,quantity,price,pnl
 2025-01-10 09:35:00,buy,TSLA,50,220.0,-50
 ```
 
----
 
-## API Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/analyze` | POST | Upload CSV → bias detection + ML scoring |
-| `/api/counterfactual` | POST | Simulate removing biased trades |
-| `/api/report` | POST | Generate Gemini coaching report |
-| `/api/sessions` | GET/POST | Retrieve or save analysis sessions |
-| `/api/trade-insights` | POST | Per-trade Gemini analysis |
-| `/health` | GET | Health check |
-
----
-
-## Project Structure
-
-```
-├── backend/
-│   ├── api/            # FastAPI route handlers
-│   ├── core/           # Analysis engine + schemas
-│   ├── detectors/      # Rule-based bias detectors
-│   ├── ml/             # XGBoost model + feature extraction
-│   ├── llm/            # Gemini client + prompts
-│   └── utils/          # Data loading, config, logging
-├── frontend/
-│   ├── app/            # Next.js pages + layout
-│   ├── components/     # UI components
-│   └── lib/            # API client + utilities
-├── trading_datasets/   # Synthetic training data
-└── shared/             # Cross-stack constants
-```
-
----
-
-## License
-
-MIT
