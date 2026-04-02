@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import logging
-import re
 import threading
 import time
 from typing import Any
@@ -66,8 +65,6 @@ class GeminiClient:
         raise RuntimeError(f"Gemini API failed after {self.MAX_RETRIES + 1} attempts.")
 
     def generate(self, prompt: str) -> str:
-        if not self.settings.gemini_api_key:
-            return "_Gemini API key not configured._"
         payload = {
             "contents": [{"role": "user", "parts": [{"text": f"{SYSTEM_PROMPT}\n\n{prompt}"}]}]
         }
@@ -75,8 +72,6 @@ class GeminiClient:
         return data["candidates"][0]["content"]["parts"][0]["text"]
 
     def chat(self, messages: list[dict[str, str]], analysis_context: str) -> str:
-        if not self.settings.gemini_api_key:
-            return "_Gemini API key not configured._"
         system_text = CHAT_SYSTEM_PROMPT.format(analysis_context=analysis_context)
         contents = [
             {"role": "user" if m["role"] == "user" else "model", "parts": [{"text": m["text"]}]}
@@ -90,9 +85,6 @@ class GeminiClient:
         return data["candidates"][0]["content"]["parts"][0]["text"]
 
     def generate_grounded(self, prompt: str) -> dict[str, Any]:
-        if not self.settings.gemini_api_key:
-            return {"text": "_Gemini API key not configured._", "sources": [], "search_queries": []}
-
         payload = {
             "contents": [{"role": "user", "parts": [{"text": f"{SYSTEM_PROMPT}\n\n{prompt}"}]}],
             "tools": [{"google_search": {}}],
