@@ -2,11 +2,11 @@
 <img src="frontend/public/images/tradealytics readme pic.jpeg" width="370"/>
 
 
-**AI-powered trading behavior analysis.**
-You: "I LOVE TRADING and the stock market but I don't know how to properly :("
-Shuhan: "ITS OK try out tradealytics!"
+**AI-powered trading behavior analysis.**  
+You: "I LOVE TRADING and the stock market but I don't know how to properly :("  
+Shuhan: "ITS OK try out tradealytics!"  
 
-Upload your trade history, detect cognitive biases, visualize behavioral patterns, and get personalized coaching — powered by XGBoost ML and Google Gemini.
+Upload your trade history, detect cognitive biases, visualize behavioral patterns, and get personalized coaching — powered by XGBoost ML and Google Gemini.  
 
 You: "YAY! I've learnt so much!"
 
@@ -17,7 +17,7 @@ You: "YAY! I've learnt so much!"
 
 - **CSV Upload** — Drag-and-drop trade logs with automatic column detection
 - **Bias Detection** — Identifies overtrading, loss aversion, and revenge trading with quantified scores
-- **3 Analysis Modes** — Rules Only · Mixed (60/40) · ML Only
+- **3 Analysis Modes** — Rules Only or Mixed (60/40) or ML Only
 - **XGBoost ML** — 4-class classifier trained on 50-trade behavioral windows
 - **Interactive Dashboard** — Heatmaps, PnL charts, sortable trade table, bias tags
 - **Counterfactual Simulator** — Remove flagged trades and see the corrected PnL
