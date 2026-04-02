@@ -1,11 +1,15 @@
 # Tradealytics
+<img src="frontend/public/images/tradealytics readme pic.jpeg" width="370"/>
 
-**AI-powered trading behavior analysis.** Upload your trade history, detect cognitive biases, visualize behavioral patterns, and get personalized coaching — powered by XGBoost ML and Google Gemini.
 
-![Python](https://img.shields.io/badge/Python-3.11+-green?style=flat-square)
-![Next.js](https://img.shields.io/badge/Next.js-14-black?style=flat-square)
-![XGBoost](https://img.shields.io/badge/XGBoost-ML-orange?style=flat-square)
-![Gemini](https://img.shields.io/badge/Gemini-2.5_Flash-blueviolet?style=flat-square)
+**AI-powered trading behavior analysis.**  
+You: "I LOVE TRADING and the stock market but I don't know how to properly :("  
+Shuhan: "ITS OK try out tradealytics!"  
+
+Upload your trade history, detect cognitive biases, visualize behavioral patterns, and get personalized coaching — powered by XGBoost ML and Google Gemini.  
+
+You: "YAY! I've learnt so much!"
+
 
 ---
 
@@ -13,7 +17,7 @@
 
 - **CSV Upload** — Drag-and-drop trade logs with automatic column detection
 - **Bias Detection** — Identifies overtrading, loss aversion, and revenge trading with quantified scores
-- **3 Analysis Modes** — Rules Only · Mixed (60/40) · ML Only
+- **3 Analysis Modes** — Rules Only or Mixed (60/40) or ML Only
 - **XGBoost ML** — 4-class classifier trained on 50-trade behavioral windows
 - **Interactive Dashboard** — Heatmaps, PnL charts, sortable trade table, bias tags
 - **Counterfactual Simulator** — Remove flagged trades and see the corrected PnL
@@ -44,7 +48,7 @@ By identifying and correcting these behaviors, traders can recover a significant
 | Frontend | Next.js 14, TypeScript, Tailwind CSS, shadcn/ui, Recharts |
 | Backend | FastAPI, Python 3.11 |
 | ML | XGBoost (4-class classifier, 18 behavioral features) |
-| LLM | Google Gemini 2.5 Flash (coaching + news grounding) |
+| LLM | Google Gemini 2.5 Flash (coaching) |
 | Database | PostgreSQL (session tracking) |
 
 ---
