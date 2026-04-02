@@ -13,7 +13,7 @@ import pandas as pd
 
 try:
     import shap
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     shap = None  # type: ignore[assignment]
 
 from backend.ml.features import FEATURE_NAMES, extract_features, extract_windowed_features

@@ -11,6 +11,7 @@ from backend.api.counterfactual import router as counterfactual_router
 from backend.api.report import router as report_router
 from backend.api.shap_explain import router as shap_explain_router
 from backend.api.trade_insights import router as trade_insights_router
+from backend.api.sessions import router as sessions_router
 from backend.api.users import router as users_router
 from backend.db.database import Base, engine
 from backend.utils.config import get_settings
@@ -43,6 +44,7 @@ def create_app() -> FastAPI:
     app.include_router(shap_explain_router, prefix="/api")
     app.include_router(trade_insights_router, prefix="/api")
     app.include_router(users_router, prefix="/api")
+    app.include_router(sessions_router, prefix="/api")
 
     @app.get("/health")
     def health_check() -> dict:

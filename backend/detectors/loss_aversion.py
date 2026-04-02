@@ -2,11 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-try:
-    import tradealytics_core
-    _USE_CPP = True
-except ImportError:
-    _USE_CPP = False
+import tradealytics_core
 
 
 def detect_loss_aversion(df: pd.DataFrame) -> dict:

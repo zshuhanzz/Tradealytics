@@ -6,14 +6,11 @@ import numpy as np
 
 try:
     import joblib
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     joblib = None
 
 MODEL_DIR = Path(__file__).resolve().parent / "saved_models"
 MODEL_PATH = MODEL_DIR / "bias_xgb.joblib"
-
-# Fallback to legacy path if old model exists
-LEGACY_MODEL_PATH = MODEL_DIR / "bias_logreg.joblib"
 
 BIAS_CLASSES = ["calm", "loss_aversion", "overtrading", "revenge_trading"]
 
@@ -25,13 +22,10 @@ class BiasMLClassifier:
         self.model = None
         self.classes: list[str] = BIAS_CLASSES
 
-        if joblib:
-            for path in [MODEL_PATH, LEGACY_MODEL_PATH]:
-                if path.exists():
-                    self.model = joblib.load(path)
-                    if hasattr(self.model, "bias_classes_"):
-                        self.classes = self.model.bias_classes_
-                    break
+        if joblib and MODEL_PATH.exists():
+            self.model = joblib.load(MODEL_PATH)
+            if hasattr(self.model, "bias_classes_"):
+                self.classes = self.model.bias_classes_
 
     @property
     def is_loaded(self) -> bool:

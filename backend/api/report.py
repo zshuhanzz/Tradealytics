@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
@@ -16,7 +15,7 @@ router = APIRouter()
 def generate_report(payload: ReportRequest) -> ReportResponse:
     try:
         counterfactual = None
-        if hasattr(payload, "analysis") and "counterfactual" in (payload.analysis or {}):
+        if "counterfactual" in (payload.analysis or {}):
             counterfactual = payload.analysis["counterfactual"]
 
         report_md, plan = generate_coaching_report(

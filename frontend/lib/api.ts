@@ -63,6 +63,26 @@ export async function fetchShapExplain(
   });
 }
 
+export async function saveSession(payload: {
+  user_id?: number;
+  analysis_mode: string;
+  trade_count: number;
+  overtrading_score: number;
+  loss_aversion_score: number;
+  revenge_score: number;
+  calm_score: number;
+}): Promise<Response> {
+  return fetch(`${API_BASE}/api/sessions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getSessions(userId: number): Promise<Response> {
+  return fetch(`${API_BASE}/api/sessions?user_id=${userId}`);
+}
+
 export async function lookupUser(username: string): Promise<Response> {
   return fetch(`${API_BASE}/api/users/lookup?username=${encodeURIComponent(username)}`);
 }
