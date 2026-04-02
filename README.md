@@ -1,5 +1,5 @@
 # Tradealytics
-
+<img src="frontend/public/images/tradealytics readme pic.jpeg" width="350"/>
 **AI-powered trading behavior analysis.** Upload your trade history, detect cognitive biases, visualize behavioral patterns, and get personalized coaching — powered by XGBoost ML and Google Gemini.
 
 ![Python](https://img.shields.io/badge/Python-3.11+-green?style=flat-square)
